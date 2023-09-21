@@ -1,7 +1,7 @@
 # syslogsidecar
 Go framework for syslog sidecars creation
 
-  syslog-sidecar:
+  **syslogsidecar**:
   - receives logs intended for [syslogd](https://linux.die.net/man/8/syslogd)
   - produces messages to the broker 
      
