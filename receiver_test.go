@@ -40,7 +40,7 @@ type recvTest struct {
 
 func newRecvTest() *recvTest {
 	res := new(recvTest)
-	res.confFolderPath = "./_conf_test/"
+	res.confFolderPath = "./conf/"
 	res.cfact = sidecar.ConfigFactory(res.confFolderPath)
 	res.q = kissngoqueue.NewQueue[sputnik.Msg]()
 	res.conntr = sputnik.DummyConnector{}
