@@ -14,7 +14,7 @@ Go framework for syslog sidecars creation
 
   ### RFC3164
 
-  RFC3164 is oldest syslog RFC, syslog-adapter supports it for old syslogd clients.
+  RFC3164 is oldest syslog RFC, syslogsidecar supports it for old syslogd clients.
 
   RFC3164 message consists of following symbolic parts:
   - priority
@@ -42,7 +42,7 @@ Go framework for syslog sidecars creation
 
   ### Non-RFC parts
 
-  syslog-adapter adds rfc of produced message to standard parts:
+  syslogsidecar adds rfc of produced message to standard parts:
   - Part name: "rfc"
   - Values: "RFC3164"|"RFC5424"
 
@@ -74,7 +74,7 @@ Go framework for syslog sidecars creation
  - 6 info
  - 7 debug
 
-  syslog-adapters filters messages by level according to value in configuration:
+  syslogsidecar filters messages by level according to value in configuration:
 ```json
 {
   "SEVERITYLEVEL": 4,
@@ -86,7 +86,7 @@ All messages with severity above 4 will be discarded.
 
   ### Configuration
 
-  Configuration of receiver part of syslog-adapter is saved in the file syslogreceiver.json:
+  Configuration of receiver part of syslogsidecar is saved in the file syslogreceiver.json:
 ```json
 {
     "SEVERITYLEVEL": 4,

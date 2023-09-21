@@ -292,7 +292,7 @@ Environment variables under vscode(rest-gateway):
 
 Additional variables:
     "STATION": "syslog",
-    "PRODUCER": "syslog-adapter",
+    "PRODUCER": "syslogsidecar",
 
 
 Rest-gateway configuration:
