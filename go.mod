@@ -1,4 +1,4 @@
-module github.com/g41797/syslog-sidecar
+module github.com/g41797/syslogsidecar
 
 go 1.19
 

@@ -1,4 +1,4 @@
-# syslog-sidecar
+# syslogsidecar
 Go framework for syslog sidecars creation
 
   syslog-sidecar:
@@ -146,11 +146,4 @@ type SyslogConfiguration struct {
 	CLIENT_KEY_PATH  string
 	ROOT_CA_PATH     string
 }
-```
-
-### Command line
-
-Example of running in vscode terminal
-```bash
- ./syslog-sidecar -cf ./cmd/syslog-sidecar/conf/
 ```
