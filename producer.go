@@ -44,7 +44,7 @@ type producer struct {
 	backup    sputnik.BlockCommunicator
 	stop      chan struct{}
 	done      chan struct{}
-	conn      chan struct{}
+	conn      chan sputnik.ServerConnection
 	dscn      chan struct{}
 	mlog      chan sputnik.Msg
 }
@@ -54,7 +54,7 @@ func (prd *producer) init(fact sputnik.ConfFactory) error {
 	prd.cfact = fact
 	prd.stop = make(chan struct{}, 1)
 	prd.done = make(chan struct{}, 1)
-	prd.conn = make(chan struct{}, 1)
+	prd.conn = make(chan sputnik.ServerConnection, 1)
 	prd.dscn = make(chan struct{}, 1)
 	prd.mlog = make(chan sputnik.Msg, 1)
 
@@ -74,8 +74,8 @@ func (prd *producer) finish(init bool) {
 }
 
 // OnServerConnect:
-func (prd *producer) brokerConnected(_ sputnik.ServerConnection) {
-	prd.conn <- struct{}{}
+func (prd *producer) brokerConnected(sharedconn sputnik.ServerConnection) {
+	prd.conn <- sharedconn
 	return
 }
 
@@ -103,9 +103,9 @@ loop:
 		select {
 		case <-prd.stop:
 			break loop
-		case <-prd.conn:
+		case sharedconn := <-prd.conn:
 			{
-				if err := prd.mp.Connect(prd.cfact); err == nil {
+				if err := prd.mp.Connect(prd.cfact, sharedconn); err == nil {
 					prd.connected = true
 				} else {
 					prd.connected = false

@@ -12,7 +12,7 @@ import (
 
 // Satellite has 2 app. blocks:
 var blkList []sputnik.BlockDescriptor = []sputnik.BlockDescriptor{
-	// memphis events Producer
+	// events Producer
 	ProducerDescriptor(),
 	// syslog Receiver
 	ReceiverDescriptor(),

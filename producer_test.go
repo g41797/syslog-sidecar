@@ -20,7 +20,7 @@ func newMMP(q *kissngoqueue.Queue[sputnik.Msg]) sidecar.MessageProducer {
 	return &res
 }
 
-func (mp *MockMsgProducer) Connect(sputnik.ConfFactory) error {
+func (mp *MockMsgProducer) Connect(cfact sputnik.ConfFactory, shared sputnik.ServerConnection) error {
 	return nil
 }
 
