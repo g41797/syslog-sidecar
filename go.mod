@@ -12,10 +12,13 @@ require (
 
 require (
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/g41797/gonfig v1.0.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
+	github.com/stretchr/testify v1.7.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 //replace github.com/g41797/sputnik => ../../g41797/sputnik/
