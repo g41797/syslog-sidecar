@@ -1,4 +1,7 @@
 # syslogsidecar
+
+[![Go](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml/badge.svg)](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml)
+
 Go framework for syslog sidecars creation
 
   **syslogsidecar**:
