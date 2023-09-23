@@ -22,6 +22,16 @@ func init() {
 
 func syslogConsumerBlockFactory() *sputnik.Block {
 	cons := new(consumer)
+	if mcf == nil {
+		return nil
+	}
+
+	mc := mcf()
+	if mc == nil {
+		return nil
+	}
+	cons.mc = mc
+
 	block := sputnik.NewBlock(
 		sputnik.WithInit(cons.init),
 		sputnik.WithRun(cons.run),
@@ -85,7 +95,7 @@ func (cons *consumer) run(bc sputnik.BlockCommunicator) {
 	cons.sender, _ = bc.Communicator(SyslogClientResponsibility)
 
 	defer close(cons.done)
-	defer cons.mc.Disconnect()
+	defer cons.disconnect()
 
 waitBroker:
 	for {
@@ -131,6 +141,15 @@ loop:
 		}
 	}
 	return
+}
+func (cons *consumer) disconnect() {
+	if cons == nil {
+		return
+	}
+	if cons.mc == nil {
+		return
+	}
+	cons.mc.Disconnect()
 }
 
 func RegisterMessageConsumerFactory(fact func() sidecar.MessageConsumer) {
