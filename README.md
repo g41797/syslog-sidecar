@@ -151,3 +151,10 @@ type SyslogConfiguration struct {
 	ROOT_CA_PATH     string
 }
 ```
+
+ ### Examples
+
+ - syslog for [Memphis](https://memphis.dev) is part of [memphis-protocol-adapter](https://github.com/g41797/memphis-protocol-adapter) project
+ - syslog for [NATS](https://nats.io) - [syslog2nats](https://github.com/g41797/syslog2nats)
+
+ **Both implementations are still in initial stage. Don't use in production!!!**
