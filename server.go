@@ -8,9 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/g41797/go-syslog"
+	"github.com/g41797/go-syslog/format"
 	"github.com/g41797/sputnik"
-	"gopkg.in/mcuadros/go-syslog.v2"
-	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
 
 type SyslogConfiguration struct {
@@ -181,11 +181,19 @@ func toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
 
 	_, exists := logParts[RFC5424OnlyKey]
 
+	var result sputnik.Msg
 	if exists {
-		return toRFC5424(logParts)
+		result = toRFC5424(logParts)
 	} else {
-		return toRFC3164(logParts)
+		result = toRFC3164(logParts)
 	}
+
+	formerMsg, exists := logParts["data"]
+	if exists {
+		result["data"] = formerMsg
+	}
+
+	return result
 }
 
 // Convert syslog RFC5424 values to strings
