@@ -46,9 +46,12 @@ Go framework for syslog sidecars creation
 
   ### Non-RFC parts
 
-  syslogsidecar adds rfc of produced message to standard parts:
-  - Part name: "rfc"
-  - Values: "RFC3164"|"RFC5424"
+  syslogsidecar adds following parts to standard ones:
+  - rfc of produced message:
+    - Part name: "rfc"
+    - Values: "RFC3164"|"RFC5424"
+  - former syslog message
+    - Part name: "data"
 
   ### Facilities and severities
 
