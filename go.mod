@@ -5,9 +5,9 @@ go 1.19
 require (
 	github.com/RackSec/srslog v0.0.0-20180709174129-a4725f04ec91
 	github.com/RoaringBitmap/roaring v1.5.0
+	github.com/g41797/go-syslog v1.0.1
 	github.com/g41797/kissngoqueue v0.1.5
 	github.com/g41797/sputnik v0.0.13
-	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 )
 
 require (
