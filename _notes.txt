@@ -404,3 +404,14 @@ Send log to syslog- adapter:
 
 Print files tree:
    tree . -I _*  -I *_test.go --gitignore > /tmp/tree.log
+
+
+SyslogDecode — a new open source library from Microsoft for processing Syslog messages (.NET):
+- https://rivantsov.medium.com/syslogdecode-a-new-open-source-library-from-microsoft-for-processing-syslog-messages-82a932521a9c
+- https://github.com/microsoft/SyslogDecode
+
+The Best Free & Paid Syslog Servers for Linux and Windows:
+- https://www.comparitech.com/net-admin/best-free-syslog-servers-for-linux-and-windows/
+
+
+
