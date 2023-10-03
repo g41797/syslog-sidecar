@@ -1,6 +1,8 @@
 package syslogsidecar
 
 import (
+	"sync/atomic"
+
 	"github.com/g41797/sputnik"
 	"github.com/g41797/sputnik/sidecar"
 )
@@ -39,9 +41,9 @@ func init() {
 
 type producer struct {
 	mp        sidecar.MessageProducer
-	connected bool
+	connected atomic.Bool
 	cfact     sputnik.ConfFactory
-	backup    sputnik.BlockCommunicator
+	writer    sputnik.BlockCommunicator
 	stop      chan struct{}
 	done      chan struct{}
 	conn      chan sputnik.ServerConnection
@@ -87,6 +89,12 @@ func (prd *producer) brokerDisconnected() {
 
 // OnMsg:
 func (prd *producer) logReceived(msg sputnik.Msg) {
+	// For ill formed message or disconnected state - forward to writer:
+	if len(msg) <= BrokenParts || !prd.connected.Load() {
+		prd.sendToWriter(msg)
+		return
+	}
+
 	prd.mlog <- msg
 	return
 }
@@ -94,7 +102,7 @@ func (prd *producer) logReceived(msg sputnik.Msg) {
 // Run
 func (prd *producer) run(bc sputnik.BlockCommunicator) {
 
-	prd.backup, _ = bc.Communicator(StorerResponsibility)
+	prd.writer, _ = bc.Communicator(WriterResponsibility)
 
 	defer close(prd.done)
 
@@ -105,17 +113,14 @@ loop:
 			break loop
 		case sharedconn := <-prd.conn:
 			{
-				if err := prd.mp.Connect(prd.cfact, sharedconn); err == nil {
-					prd.connected = true
-				} else {
-					prd.connected = false
-				}
+				err := prd.mp.Connect(prd.cfact, sharedconn)
+				prd.connected.Store(err == nil)
 			}
 		case <-prd.dscn:
 			{
-				if prd.connected {
+				if prd.connected.Load() {
 					prd.mp.Disconnect()
-					prd.connected = false
+					prd.connected.Store(false)
 				}
 			}
 		case logmsg := <-prd.mlog:
@@ -128,24 +133,16 @@ loop:
 }
 
 func (prd *producer) processLog(logmsg sputnik.Msg) {
-	sendToBackup := prd.backup != nil
-	from, exists := logmsg["from"]
-	if exists && (from == ProducerResponsibility) {
-		sendToBackup = false
-	}
-
-	if !prd.connected && sendToBackup {
-		logmsg["from"] = ProducerResponsibility
-		prd.backup.Send(logmsg)
-		return
-	}
 	if err := prd.mp.Produce(logmsg); err != nil {
-		if sendToBackup {
-			logmsg["from"] = ProducerResponsibility
-			prd.backup.Send(logmsg)
-		}
+		prd.sendToWriter(logmsg)
 	}
 	return
+}
+
+func (prd *producer) sendToWriter(logmsg sputnik.Msg) {
+	if prd.writer != nil {
+		prd.writer.Send(logmsg)
+	}
 }
 
 func RegisterMessageProducerFactory(fact func() sidecar.MessageProducer) {

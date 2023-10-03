@@ -59,16 +59,32 @@ type SyslogConfiguration struct {
 	ROOT_CA_PATH     string
 }
 
+const (
+	RFC3164OnlyKey = "tag"
+	RFC5424OnlyKey = "structured_data"
+	RFCFormatKey   = "rfc"
+	RFC3164        = "RFC3164"
+	RFC5424        = "RFC5424"
+	SeverityKey    = "severity"
+	ParserError    = "parsererror"
+	FormerMessage  = "data"
+	BrokenParts    = 2
+)
+
 type Server struct {
-	config  SyslogConfiguration
-	bc      atomic.Pointer[sputnik.BlockCommunicator]
-	syslogd *syslog.Server
+	config    SyslogConfiguration
+	bc        atomic.Pointer[sputnik.BlockCommunicator]
+	syslogd   *syslog.Server
+	parts3164 map[string]string
+	parts5424 map[string]string
 }
 
 func NewServer(conf SyslogConfiguration) *Server {
 	srv := new(Server)
 	srv.config = conf
 	srv.bc = atomic.Pointer[sputnik.BlockCommunicator]{}
+	srv.parts3164 = RFC3164Props()
+	srv.parts5424 = RFC5424Props()
 	return srv
 }
 
@@ -134,14 +150,14 @@ func (s *Server) Handle(logParts format.LogParts, msgLen int64, err error) {
 	}
 
 	if err != nil {
-		return
+		logParts[ParserError] = err.Error()
 	}
 
 	if !s.forHandle(logParts) {
 		return
 	}
 
-	msg := toMsg(logParts, msgLen)
+	msg := s.toMsg(logParts, msgLen)
 
 	(*s.bc.Load()).Send(msg)
 }
@@ -170,7 +186,7 @@ func (s *Server) forHandle(logParts format.LogParts) bool {
 	return sevvalue <= s.config.SEVERITYLEVEL
 }
 
-func toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
+func (s *Server) toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
 	if logParts == nil {
 		return nil
 	}
@@ -179,13 +195,18 @@ func toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
 		return nil
 	}
 
-	_, exists := logParts[RFC5424OnlyKey]
-
 	var result sputnik.Msg
-	if exists {
-		result = toRFC5424(logParts)
-	} else {
-		result = toRFC3164(logParts)
+
+	for {
+		if _, exists := logParts[RFC5424OnlyKey]; exists {
+			result = s.toRFC5424(logParts)
+			break
+		}
+
+		if _, exists := logParts[RFC3164OnlyKey]; exists {
+			result = s.toRFC3164(logParts)
+		}
+		break
 	}
 
 	formerMsg, exists := logParts["data"]
@@ -193,32 +214,33 @@ func toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
 		result["data"] = formerMsg
 	}
 
+	parserError, exists := logParts[ParserError]
+	if exists {
+		result[ParserError] = parserError
+	}
+
 	return result
 }
 
 // Convert syslog RFC5424 values to strings
-func toRFC5424(logParts format.LogParts) sputnik.Msg {
+func (s *Server) toRFC5424(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
 	msg[RFCFormatKey] = RFC5424
 
-	props := RFC5424Props()
-
 	for k, v := range logParts {
-		msg[k] = toString(v, props[k])
+		msg[k] = toString(v, s.parts5424[k])
 	}
 
 	return msg
 }
 
 // Convert syslog RFC3164 values to strings
-func toRFC3164(logParts format.LogParts) sputnik.Msg {
+func (s *Server) toRFC3164(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
 	msg[RFCFormatKey] = RFC3164
 
-	props := RFC3164Props()
-
 	for k, v := range logParts {
-		msg[k] = toString(v, props[k])
+		msg[k] = toString(v, s.parts3164[k])
 	}
 
 	return msg
@@ -251,13 +273,13 @@ func toString(val any, typ string) string {
 // RFC3164 parameters with type
 func RFC3164Props() map[string]string {
 	return map[string]string{
-		"priority":  "int",
-		"facility":  "int",
-		SeverityKey: "int",
-		"timestamp": "time.Time",
-		"hostname":  "string",
-		"tag":       "string",
-		"content":   "string",
+		"priority":     "int",
+		"facility":     "int",
+		SeverityKey:    "int",
+		"timestamp":    "time.Time",
+		"hostname":     "string",
+		RFC3164OnlyKey: "string",
+		"content":      "string",
 	}
 }
 
@@ -277,14 +299,6 @@ func RFC5424Props() map[string]string {
 		"message":      "string",
 	}
 }
-
-const (
-	RFC5424OnlyKey = "structured_data"
-	RFCFormatKey   = "rfc"
-	RFC3164        = "RFC3164"
-	RFC5424        = "RFC5424"
-	SeverityKey    = "severity"
-)
 
 func PrepareTLS(CLIENT_CERT_PATH, CLIENT_KEY_PATH, ROOT_CA_PATH string) (*tls.Config, error) {
 

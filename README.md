@@ -50,8 +50,10 @@ Go framework for syslog sidecars creation
   - rfc of produced message:
     - Part name: "rfc"
     - Values: "RFC3164"|"RFC5424"
-  - former syslog message
+  - former syslog message:
     - Part name: "data"
+  - parsing error (optional):
+    - Part name: "parsererror"
 
   ### Facilities and severities
 
