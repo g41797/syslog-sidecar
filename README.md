@@ -157,6 +157,15 @@ type SyslogConfiguration struct {
 }
 ```
 
+ ### Automatic startup of the message broker
+
+If used broker has docker compose file for testing and/or integration, place it to configuration folder with name *docker-compose.yml*
+
+During startup of the sidecar all services specified in this file will be started and after finish - stopped.
+
+ [Example of usage](https://github.com/g41797/memphis-protocol-adapter/blob/master/cmd/syslog-e2e/main.go)
+
+
  ### Examples
 
  - syslog for [Memphis](https://memphis.dev) is part of [memphis-protocol-adapter](https://github.com/g41797/memphis-protocol-adapter) project
