@@ -157,13 +157,9 @@ type SyslogConfiguration struct {
 }
 ```
 
- ### Automatic startup of the message broker
+ ### Automatic startup of the message broker during test/integration
 
-If used broker has docker compose file for testing and/or integration, place it to configuration folder with name *docker-compose.yml*
-
-During startup of the sidecar all services specified in this file will be started and after finish - stopped.
-
- [Example of usage](https://github.com/g41797/memphis-protocol-adapter/blob/master/cmd/syslog-e2e/main.go)
+You can use [starter](https://github.com/g41797/starter#readme) for automatic start/stop docker containers with broker services.
 
 
  ### Examples
