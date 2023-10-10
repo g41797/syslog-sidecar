@@ -209,7 +209,7 @@ func (s *Server) toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
 		break
 	}
 
-	formerMsg, exists := logParts["data"]
+	formerMsg, exists := logParts["data"].(string)
 	if exists {
 		result["data"] = formerMsg
 	}
