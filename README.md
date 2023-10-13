@@ -100,7 +100,7 @@ All messages with severity above 4 will be discarded.
 {
     "SEVERITYLEVEL": 4,
     "ADDRTCP": "127.0.0.1:5141",
-    "ADDRUDP": "0.0.0.0:5141",
+    "ADDRUDP": "127.0.0.1:5141",
     "UDSPATH": "",
     "ADDRTCPTLS": "127.0.0.1:5143",
     "CLIENT_CERT_PATH": "",
