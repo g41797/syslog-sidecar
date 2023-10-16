@@ -414,4 +414,10 @@ The Best Free & Paid Syslog Servers for Linux and Windows:
 - https://www.comparitech.com/net-admin/best-free-syslog-servers-for-linux-and-windows/
 
 
+Setting SO_REUSEPORT and similar socket options in Go 1.11
+- https://rohanverma.net/blog/2019/01/08/setting-so_reuseport-and-similar-socket-options-in-go-1-11/
+
+
+Cancelling a net.Listener via Context in Golang
+- https://stackoverflow.com/questions/66755407/cancelling-a-net-listener-via-context-in-golang
 
