@@ -161,13 +161,14 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Finish() error {
+	var result error
 	for _, syslogd := range s.servers {
 		if err := syslogd.Kill(); err != nil {
-			return err
+			result = err
 		}
 	}
 
-	return nil
+	return result
 }
 
 func (s *Server) SetupHandling(bc sputnik.BlockCommunicator) {
