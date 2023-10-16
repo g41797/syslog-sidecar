@@ -162,7 +162,9 @@ func (s *Server) Start() error {
 
 func (s *Server) Finish() error {
 	for _, syslogd := range s.servers {
-		syslogd.Kill()
+		if err := syslogd.Kill(); err != nil {
+			return err
+		}
 	}
 
 	return nil
