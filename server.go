@@ -3,6 +3,7 @@ package syslogsidecar
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"strconv"
 	"sync/atomic"
@@ -74,7 +75,7 @@ const (
 type Server struct {
 	config    SyslogConfiguration
 	bc        atomic.Pointer[sputnik.BlockCommunicator]
-	syslogd   *syslog.Server
+	servers   []*syslog.Server
 	parts3164 map[string]string
 	parts5424 map[string]string
 }
@@ -88,22 +89,32 @@ func NewServer(conf SyslogConfiguration) *Server {
 	return srv
 }
 
+func (s *Server) newSyslogd() *syslog.Server {
+	syslogd := syslog.NewServer()
+	syslogd.SetFormat(syslog.Automatic)
+	syslogd.SetHandler(s)
+	return syslogd
+}
+
 func (s *Server) Init() error {
-	s.syslogd = syslog.NewServer()
-	s.syslogd.SetFormat(syslog.Automatic)
-	s.syslogd.SetHandler(s)
+
 	if len(s.config.ADDRTCP) != 0 {
-		err := s.syslogd.ListenTCP(s.config.ADDRTCP)
+		syslogd := s.newSyslogd()
+		err := syslogd.ListenTCP(s.config.ADDRTCP)
 		if err != nil {
 			return err
 		}
+		s.servers = append(s.servers, syslogd)
 	}
 
 	if len(s.config.ADDRUDP) != 0 {
-		err := s.syslogd.ListenUDP(s.config.ADDRUDP)
+		syslogd := s.newSyslogd()
+		syslogd.SetDatagramChannelSize(1024)
+		err := syslogd.ListenUDP(s.config.ADDRUDP)
 		if err != nil {
 			return err
 		}
+		s.servers = append(s.servers, syslogd)
 	}
 
 	if len(s.config.ADDRTCPTLS) != 0 {
@@ -114,16 +125,34 @@ func (s *Server) Init() error {
 		}
 
 		if t != nil {
-			err = s.syslogd.ListenTCPTLS(s.config.ADDRUDP, t)
+			syslogd := s.newSyslogd()
+			err = syslogd.ListenTCPTLS(s.config.ADDRUDP, t)
 			if err != nil {
 				return err
 			}
+			s.servers = append(s.servers, syslogd)
 		}
 	}
 
 	if len(s.config.UDSPATH) != 0 {
-		err := s.syslogd.ListenUnixgram(s.config.UDSPATH)
+		syslogd := s.newSyslogd()
+		err := syslogd.ListenUnixgram(s.config.UDSPATH)
 		if err != nil {
+			return err
+		}
+		s.servers = append(s.servers, syslogd)
+	}
+
+	if len(s.servers) == 0 {
+		return fmt.Errorf("empty configuration of syslog")
+	}
+
+	return nil
+}
+
+func (s *Server) Start() error {
+	for _, syslogd := range s.servers {
+		if err := syslogd.Boot(); err != nil {
 			return err
 		}
 	}
@@ -131,13 +160,12 @@ func (s *Server) Init() error {
 	return nil
 }
 
-func (s *Server) Start() error {
-	return s.syslogd.Boot()
-}
-
 func (s *Server) Finish() error {
-	err := s.syslogd.Kill()
-	return err
+	for _, syslogd := range s.servers {
+		syslogd.Kill()
+	}
+
+	return nil
 }
 
 func (s *Server) SetupHandling(bc sputnik.BlockCommunicator) {
