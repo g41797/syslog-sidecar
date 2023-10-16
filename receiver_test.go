@@ -181,7 +181,7 @@ func TestReceive_StartStop(t *testing.T) {
 
 	rt.run(t)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Second)
 	rt.conntr.SetState(true)
 
 	if err = rt.client.init(); err != nil {
@@ -216,7 +216,7 @@ func TestReceive_Exchange(t *testing.T) {
 
 	rt.run(t)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Second)
 	rt.conntr.SetState(true)
 
 	if err = rt.client.init(); err != nil {
