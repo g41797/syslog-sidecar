@@ -4,6 +4,7 @@ import (
 	"github.com/asaskevich/EventBus"
 	"github.com/g41797/sputnik"
 	"github.com/g41797/sputnik/sidecar"
+	"github.com/g41797/syslogsidecar"
 	"github.com/g41797/syslogsidecar/e2e"
 )
 
@@ -95,7 +96,7 @@ func ConvertConsumeMsg(inmsg map[string]string) sputnik.Msg {
 	smsg := sputnik.Msg{}
 	smsg["name"] = "consumed"
 	smsg["consumed"] = inmsg
-	smsg["data"] = ""
+	smsg[syslogsidecar.FormerMessage] = ""
 
 	return smsg
 }

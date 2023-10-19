@@ -209,9 +209,9 @@ func (s *Server) toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
 		break
 	}
 
-	formerMsg, exists := logParts["data"].(string)
+	formerMsg, exists := logParts[FormerMessage].(string)
 	if exists {
-		result["data"] = formerMsg
+		result[FormerMessage] = formerMsg
 	}
 
 	parserError, exists := logParts[ParserError]
@@ -270,7 +270,16 @@ func toString(val any, typ string) string {
 	return result
 }
 
+//
+// https://blog.datalust.co/seq-input-syslog/
+//
+
+// ------------------------------------
+// priority = (facility * 8) + severity
+// ------------------------------------
+
 // RFC3164 parameters with type
+// https://documentation.solarwinds.com/en/success_center/kss/content/kss_adminguide_syslog_protocol.htm
 func RFC3164Props() map[string]string {
 	return map[string]string{
 		"priority":     "int",
@@ -284,14 +293,15 @@ func RFC3164Props() map[string]string {
 }
 
 // RFC5424 parameters with type
+// https://hackmd.io/@njjack/syslogformat
 func RFC5424Props() map[string]string {
 	return map[string]string{
 		"priority":     "int",
 		"facility":     "int",
 		SeverityKey:    "int",
+		"version":      "int",
 		"timestamp":    "time.Time",
 		"hostname":     "string",
-		"version":      "int",
 		"app_name":     "string",
 		"proc_id":      "string",
 		"msg_id":       "string",
