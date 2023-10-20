@@ -42,15 +42,34 @@ func (mp *syslogmsgparts) extractBadMessage(extr func(name, value string) error)
 	return extr(FormerMessage, value)
 }
 
-// func (mp *syslogmsgparts) extractRFC5424Message(extr func(name, value string) error) error {
-// 	return nil
-// }
-
-// func (mp *syslogmsgparts) extractRFC3164Message(extr func(name, value string) error) error {
-// 	return nil
-// }
-
 func (mp *syslogmsgparts) extractRFCMessage(names []string, extr func(name, value string) error) error {
+	mp.rewind()
+
+	count, _ := mp.runeAt(1)
+	mp.skip(int(count + 1))
+
+	vlen, _ := mp.runeAt(2)
+	value, err := mp.part(int(vlen))
+	if err != nil {
+		return err
+	}
+	err = extr(RFCFormatKey, value)
+	if err != nil {
+		return err
+	}
+
+	for i, name := range names {
+		vlen, _ := mp.runeAt(2 + i)
+		value, err := mp.part(int(vlen))
+		if err != nil {
+			return err
+		}
+		err = extr(name, value)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

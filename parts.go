@@ -52,7 +52,7 @@ func (p *parts) pos() int {
 
 // Sets the position to 0.
 // The internal array will stay the same.
-func (p *parts) clear() {
+func (p *parts) rewind() {
 	p.position = 0
 }
 
