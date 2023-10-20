@@ -4,9 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"os"
-	"strconv"
 	"sync/atomic"
-	"time"
 
 	"github.com/g41797/go-syslog"
 	"github.com/g41797/go-syslog/format"
@@ -59,32 +57,16 @@ type SyslogConfiguration struct {
 	ROOT_CA_PATH     string
 }
 
-const (
-	RFC3164OnlyKey = "tag"
-	RFC5424OnlyKey = "structured_data"
-	RFCFormatKey   = "rfc"
-	RFC3164        = "RFC3164"
-	RFC5424        = "RFC5424"
-	SeverityKey    = "severity"
-	ParserError    = "parsererror"
-	FormerMessage  = "data"
-	BrokenParts    = 2
-)
-
 type Server struct {
-	config    SyslogConfiguration
-	bc        atomic.Pointer[sputnik.BlockCommunicator]
-	syslogd   *syslog.Server
-	parts3164 map[string]string
-	parts5424 map[string]string
+	config  SyslogConfiguration
+	bc      atomic.Pointer[sputnik.BlockCommunicator]
+	syslogd *syslog.Server
 }
 
 func NewServer(conf SyslogConfiguration) *Server {
 	srv := new(Server)
 	srv.config = conf
 	srv.bc = atomic.Pointer[sputnik.BlockCommunicator]{}
-	srv.parts3164 = RFC3164Props()
-	srv.parts5424 = RFC5424Props()
 	return srv
 }
 
@@ -149,15 +131,11 @@ func (s *Server) Handle(logParts format.LogParts, msgLen int64, err error) {
 		return
 	}
 
-	if err != nil {
-		logParts[ParserError] = err.Error()
-	}
-
-	if !s.forHandle(logParts) {
+	if (err == nil) && (!s.forHandle(logParts)) {
 		return
 	}
 
-	msg := s.toMsg(logParts, msgLen)
+	msg := toMsg(logParts, msgLen, err)
 
 	(*s.bc.Load()).Send(msg)
 }
@@ -184,130 +162,6 @@ func (s *Server) forHandle(logParts format.LogParts) bool {
 	sevvalue, _ := severity.(int)
 
 	return sevvalue <= s.config.SEVERITYLEVEL
-}
-
-func (s *Server) toMsg(logParts format.LogParts, msgLen int64) sputnik.Msg {
-	if logParts == nil {
-		return nil
-	}
-
-	if len(logParts) == 0 {
-		return nil
-	}
-
-	var result sputnik.Msg
-
-	for {
-		if _, exists := logParts[RFC5424OnlyKey]; exists {
-			result = s.toRFC5424(logParts)
-			break
-		}
-
-		if _, exists := logParts[RFC3164OnlyKey]; exists {
-			result = s.toRFC3164(logParts)
-		}
-		break
-	}
-
-	formerMsg, exists := logParts[FormerMessage].(string)
-	if exists {
-		result[FormerMessage] = formerMsg
-	}
-
-	parserError, exists := logParts[ParserError]
-	if exists {
-		result[ParserError] = parserError
-	}
-
-	return result
-}
-
-// Convert syslog RFC5424 values to strings
-func (s *Server) toRFC5424(logParts format.LogParts) sputnik.Msg {
-	msg := make(sputnik.Msg)
-	msg[RFCFormatKey] = RFC5424
-
-	for k, v := range logParts {
-		msg[k] = toString(v, s.parts5424[k])
-	}
-
-	return msg
-}
-
-// Convert syslog RFC3164 values to strings
-func (s *Server) toRFC3164(logParts format.LogParts) sputnik.Msg {
-	msg := make(sputnik.Msg)
-	msg[RFCFormatKey] = RFC3164
-
-	for k, v := range logParts {
-		msg[k] = toString(v, s.parts3164[k])
-	}
-
-	return msg
-}
-
-func toString(val any, typ string) string {
-	result := ""
-
-	if val == nil {
-		return result
-	}
-
-	switch typ {
-	case "string":
-		result, _ = val.(string)
-		return result
-	case "int":
-		intval, _ := val.(int)
-		result = strconv.Itoa(intval)
-		return result
-	case "time.Time":
-		tval, _ := val.(time.Time)
-		result = tval.UTC().String()
-		return result
-	}
-
-	return result
-}
-
-//
-// https://blog.datalust.co/seq-input-syslog/
-//
-
-// ------------------------------------
-// priority = (facility * 8) + severity
-// ------------------------------------
-
-// RFC3164 parameters with type
-// https://documentation.solarwinds.com/en/success_center/kss/content/kss_adminguide_syslog_protocol.htm
-func RFC3164Props() map[string]string {
-	return map[string]string{
-		"priority":     "int",
-		"facility":     "int",
-		SeverityKey:    "int",
-		"timestamp":    "time.Time",
-		"hostname":     "string",
-		RFC3164OnlyKey: "string",
-		"content":      "string",
-	}
-}
-
-// RFC5424 parameters with type
-// https://hackmd.io/@njjack/syslogformat
-func RFC5424Props() map[string]string {
-	return map[string]string{
-		"priority":     "int",
-		"facility":     "int",
-		SeverityKey:    "int",
-		"version":      "int",
-		"timestamp":    "time.Time",
-		"hostname":     "string",
-		"app_name":     "string",
-		"proc_id":      "string",
-		"msg_id":       "string",
-		RFC5424OnlyKey: "string",
-		"message":      "string",
-	}
 }
 
 func PrepareTLS(CLIENT_CERT_PATH, CLIENT_KEY_PATH, ROOT_CA_PATH string) (*tls.Config, error) {

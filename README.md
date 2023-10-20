@@ -46,15 +46,15 @@ Go framework for syslog sidecars creation
 
   ### Non-RFC parts
 
-  syslogsidecar adds following parts to standard ones:
-  - rfc of produced message:
-    - Part name: "rfc"
-    - Values: "RFC3164"|"RFC5424"
-  - former syslog message:
-    - Part name: "data"
-  - parsing error (optional):
-    - Part name: "parsererror"
+  syslogsidecar adds rfc of produced message:
+  - Part name: "rfc"
+  - Values: "RFC3164"|"RFC5424"
 
+### Badly formatted messages
+
+  syslogsidecar creates only one part for badly formatted message - former syslog message:
+  - Part name: "data"
+  
   ### Facilities and severities
 
   Valid facility names are:
@@ -73,7 +73,6 @@ Go framework for syslog sidecars creation
   - local0-local7
 
     Valid severity levels and names are:
-
  - 0 emerg
  - 1 alert
  - 2 crit
