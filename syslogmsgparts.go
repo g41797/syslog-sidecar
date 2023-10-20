@@ -1,6 +1,7 @@
 package syslogsidecar
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -12,7 +13,44 @@ type syslogmsgparts struct {
 	parts
 }
 
-func (mp *syslogmsgparts) Extract(func(name, value string) error) error {
+func (mp *syslogmsgparts) Extract(ef func(name, value string) error) error {
+
+	count, _ := mp.runeAt(0)
+
+	switch int(count) {
+	case BadMessageParts:
+		return mp.extractBadMessage(ef)
+	case RFC5424Parts:
+		return mp.extractRFCMessage(rfc5424names[:], ef)
+	case RFC3164Parts:
+		return mp.extractRFCMessage(rfc3164names[:], ef)
+	}
+
+	return fmt.Errorf("Wrong packed syslog message")
+}
+
+func (mp *syslogmsgparts) extractBadMessage(extr func(name, value string) error) error {
+	mlen, _ := mp.runeAt(1)
+	mp.skip(2)
+
+	value, err := mp.part(int(mlen))
+
+	if err != nil {
+		return err
+	}
+
+	return extr(FormerMessage, value)
+}
+
+// func (mp *syslogmsgparts) extractRFC5424Message(extr func(name, value string) error) error {
+// 	return nil
+// }
+
+// func (mp *syslogmsgparts) extractRFC3164Message(extr func(name, value string) error) error {
+// 	return nil
+// }
+
+func (mp *syslogmsgparts) extractRFCMessage(names []string, extr func(name, value string) error) error {
 	return nil
 }
 
@@ -60,13 +98,13 @@ func (mp *syslogmsgparts) fillFormerMessage(logParts format.LogParts) {
 func (mp *syslogmsgparts) fillRFC5424(logParts format.LogParts) {
 	mp.set()
 
-	count := 1 + len(rfc5424parts)
+	count := 1 + len(rfc5424names)
 	mp.setRuneAt(0, rune(count))
 	mp.skip(count + 1)
 
 	mp.setRuneAt(1, rune(mp.appendText(RFC5424)))
 
-	for i, name := range rfc5424parts {
+	for i, name := range rfc5424names {
 		v, exists := logParts[name]
 
 		if !exists {
@@ -81,13 +119,13 @@ func (mp *syslogmsgparts) fillRFC5424(logParts format.LogParts) {
 func (mp *syslogmsgparts) fillRFC3164(logParts format.LogParts) {
 	mp.set()
 
-	count := 1 + len(rfc3164parts)
+	count := 1 + len(rfc3164names)
 	mp.setRuneAt(0, rune(count))
 	mp.skip(count + 1)
 
 	mp.setRuneAt(1, rune(mp.appendText(RFC3164)))
 
-	for i, name := range rfc3164parts {
+	for i, name := range rfc3164names {
 		v, exists := logParts[name]
 
 		if !exists {
@@ -101,15 +139,18 @@ func (mp *syslogmsgparts) fillRFC3164(logParts format.LogParts) {
 }
 
 const (
-	RFC3164OnlyKey = "tag"
-	RFC5424OnlyKey = "structured_data"
-	RFCFormatKey   = "rfc"
-	RFC3164        = "RFC3164"
-	RFC5424        = "RFC5424"
-	SeverityKey    = "severity"
-	ParserError    = "parsererror"
-	FormerMessage  = "data"
-	BrokenParts    = 2
+	RFC3164OnlyKey  = "tag"
+	RFC5424OnlyKey  = "structured_data"
+	RFCFormatKey    = "rfc"
+	RFC3164         = "RFC3164"
+	RFC5424         = "RFC5424"
+	SeverityKey     = "severity"
+	ParserError     = "parsererror"
+	FormerMessage   = "data"
+	BrokenParts     = 2
+	BadMessageParts = 1
+	RFC5424Parts    = 12 // RFC + 11
+	RFC3164Parts    = 8  // RFC + 7
 )
 
 //
@@ -136,7 +177,7 @@ func RFC3164Props() map[string]string {
 
 var rfc3164props = RFC3164Props()
 
-var rfc3164parts = [7]string{
+var rfc3164names = [7]string{
 	"priority", "facility", SeverityKey, "timestamp", "hostname", RFC3164OnlyKey, "content"}
 
 // RFC5424 parameters with type
@@ -159,7 +200,7 @@ func RFC5424Props() map[string]string {
 
 var rfc5424props = RFC5424Props()
 
-var rfc5424parts = [11]string{
+var rfc5424names = [11]string{
 	"priority", "facility", SeverityKey, "version", "timestamp", "hostname",
 	"app_name", "proc_id", "msg_id", RFC5424OnlyKey, "message"}
 
@@ -200,7 +241,7 @@ func toRFC5424(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
 	msg[RFCFormatKey] = RFC5424
 
-	for _, name := range rfc5424parts {
+	for _, name := range rfc5424names {
 		v, exists := logParts[name]
 		if !exists {
 			msg[name] = ""
@@ -217,7 +258,7 @@ func toRFC3164(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
 	msg[RFCFormatKey] = RFC3164
 
-	for _, name := range rfc3164parts {
+	for _, name := range rfc3164names {
 		v, exists := logParts[name]
 		if !exists {
 			msg[name] = ""

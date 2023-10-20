@@ -118,3 +118,23 @@ func (p *parts) grow(lenToAdd int) {
 
 	p.data = append(p.data, make([]rune, newLen-len(p.data))...)
 }
+
+func (p *parts) part(length int) (string, error) {
+	if length <= 0 {
+		return "", nil
+	}
+
+	start := p.position
+
+	err := p.skip(length)
+	if err != nil {
+		return "", err
+	}
+
+	end := p.position
+
+	r := make([]rune, end-start)
+	copy(r, p.data[start:end])
+
+	return string(r), nil
+}
