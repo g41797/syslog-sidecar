@@ -89,8 +89,8 @@ func (prd *producer) brokerDisconnected() {
 
 // OnMsg:
 func (prd *producer) logReceived(msg sputnik.Msg) {
-	// For ill formed message or disconnected state - forward to writer:
-	if len(msg) <= BrokenParts || !prd.connected.Load() {
+	// For disconnected state - forward to writer:
+	if !prd.connected.Load() {
 		prd.sendToWriter(msg)
 		return
 	}

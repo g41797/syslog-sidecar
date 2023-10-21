@@ -150,7 +150,7 @@ func (s *Server) forHandle(logParts format.LogParts) bool {
 		return false
 	}
 
-	severity, exists := logParts[SeverityKey]
+	severity, exists := logParts[severityKey]
 
 	if !exists {
 		return true

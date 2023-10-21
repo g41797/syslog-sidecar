@@ -13,7 +13,7 @@ import (
 func Test_PackUnpackBadlyFormatted(t *testing.T) {
 
 	in := map[string]string{
-		FormerMessage: "FormerMessage",
+		Formermessage: "Formermessage",
 	}
 
 	logparts, err := toLogParts(in, formerMessage[:])

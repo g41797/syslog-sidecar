@@ -96,7 +96,7 @@ func ConvertConsumeMsg(inmsg map[string]string) sputnik.Msg {
 	smsg := sputnik.Msg{}
 	smsg["name"] = "consumed"
 	smsg["consumed"] = inmsg
-	smsg[syslogsidecar.FormerMessage] = ""
+	smsg[syslogsidecar.Formermessage] = ""
 
 	return smsg
 }

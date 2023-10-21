@@ -10,18 +10,17 @@ import (
 )
 
 const (
-	RFC3164OnlyKey  = "tag"
-	RFC5424OnlyKey  = "structured_data"
-	RFCFormatKey    = "rfc"
-	RFC3164         = "RFC3164"
-	RFC5424         = "RFC5424"
-	SeverityKey     = "severity"
-	ParserError     = "parsererror"
-	FormerMessage   = "data"
-	BrokenParts     = 2
-	BadMessageParts = len(formerMessage)
-	RFC5424Parts    = len(rfc5424parts)
-	RFC3164Parts    = len(rfc3164parts)
+	Formermessage = "data"
+
+	rfc3164         = "RFC3164"
+	rfc5424         = "RFC5424"
+	rfcFormatKey    = "rfc"
+	rfc3164OnlyKey  = "tag"
+	rfc5424OnlyKey  = "structured_data"
+	severityKey     = "severity"
+	badMessageParts = len(formerMessage)
+	rfc5424Parts    = len(rfc5424parts)
+	rfc3164Parts    = len(rfc3164parts)
 )
 
 type partType struct {
@@ -29,47 +28,40 @@ type partType struct {
 	kind string
 }
 
-//
-// https://blog.datalust.co/seq-input-syslog/
-//
-// ------------------------------------
-// priority = (facility * 8) + severity
-// ------------------------------------
-
 // RFC3164 parameters with type
 // https://documentation.solarwinds.com/en/success_center/kss/content/kss_adminguide_syslog_protocol.htm
 
 var rfc3164parts = [...]partType{
-	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogsidecar
+	{rfcFormatKey, "string"}, // Non-RFC: Added by syslogsidecar
 	{"priority", "int"},
 	{"facility", "int"},
-	{SeverityKey, "int"},
+	{severityKey, "int"},
 	{"timestamp", "time.Time"},
 	{"hostname", "string"},
-	{RFC3164OnlyKey, "string"},
+	{rfc3164OnlyKey, "string"},
 	{"content", "string"},
 }
 
 // RFC5424 parameters with type
 // https://hackmd.io/@njjack/syslogformat
 var rfc5424parts = [...]partType{
-	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogsidecar
+	{rfcFormatKey, "string"}, // Non-RFC: Added by syslogsidecar
 	{"priority", "int"},
 	{"facility", "int"},
-	{SeverityKey, "int"},
+	{severityKey, "int"},
 	{"version", "int"},
 	{"timestamp", "time.Time"},
 	{"hostname", "string"},
 	{"app_name", "string"},
 	{"proc_id", "string"},
 	{"msg_id", "string"},
-	{RFC5424OnlyKey, "string"},
+	{rfc5424OnlyKey, "string"},
 	{"message", "string"},
 }
 
 // Former message - for badly formatted syslog message
 var formerMessage = [...]partType{
-	{FormerMessage, "string"},
+	{Formermessage, "string"},
 }
 
 type syslogmsgparts struct {
@@ -95,14 +87,14 @@ func (mp *syslogmsgparts) pack(logParts format.LogParts, err error) error {
 		return nil
 	}
 
-	if _, exists := logParts[RFC5424OnlyKey]; exists {
-		logParts[RFCFormatKey] = RFC5424
+	if _, exists := logParts[rfc5424OnlyKey]; exists {
+		logParts[rfcFormatKey] = rfc5424
 		mp.packParts(rfc5424parts[:], logParts)
 		return nil
 	}
 
-	if _, exists := logParts[RFC3164OnlyKey]; exists {
-		logParts[RFCFormatKey] = RFC3164
+	if _, exists := logParts[rfc3164OnlyKey]; exists {
+		logParts[rfcFormatKey] = rfc3164
 		mp.packParts(rfc3164parts[:], logParts)
 		return nil
 	}
@@ -143,11 +135,11 @@ func (mp *syslogmsgparts) Unpack(put func(name, value string) error) error {
 	count, _ := mp.runeAt(0)
 
 	switch int(count) {
-	case BadMessageParts:
+	case badMessageParts:
 		return mp.unpackParts(formerMessage[:], put)
-	case RFC5424Parts:
+	case rfc5424Parts:
 		return mp.unpackParts(rfc5424parts[:], put)
-	case RFC3164Parts:
+	case rfc3164Parts:
 		return mp.unpackParts(rfc3164parts[:], put)
 	}
 
@@ -204,10 +196,10 @@ func RFC3164Props() map[string]string {
 	return map[string]string{
 		"priority":     "int",
 		"facility":     "int",
-		SeverityKey:    "int",
+		severityKey:    "int",
 		"timestamp":    "time.Time",
 		"hostname":     "string",
-		RFC3164OnlyKey: "string",
+		rfc3164OnlyKey: "string",
 		"content":      "string",
 	}
 }
@@ -215,20 +207,20 @@ func RFC3164Props() map[string]string {
 var rfc3164props = RFC3164Props()
 
 var rfc3164names = [7]string{
-	"priority", "facility", SeverityKey, "timestamp", "hostname", RFC3164OnlyKey, "content"}
+	"priority", "facility", severityKey, "timestamp", "hostname", rfc3164OnlyKey, "content"}
 
 func RFC5424Props() map[string]string {
 	return map[string]string{
 		"priority":     "int",
 		"facility":     "int",
-		SeverityKey:    "int",
+		severityKey:    "int",
 		"version":      "int",
 		"timestamp":    "time.Time",
 		"hostname":     "string",
 		"app_name":     "string",
 		"proc_id":      "string",
 		"msg_id":       "string",
-		RFC5424OnlyKey: "string",
+		rfc5424OnlyKey: "string",
 		"message":      "string",
 	}
 }
@@ -236,8 +228,8 @@ func RFC5424Props() map[string]string {
 var rfc5424props = RFC5424Props()
 
 var rfc5424names = [11]string{
-	"priority", "facility", SeverityKey, "version", "timestamp", "hostname",
-	"app_name", "proc_id", "msg_id", RFC5424OnlyKey, "message"}
+	"priority", "facility", severityKey, "version", "timestamp", "hostname",
+	"app_name", "proc_id", "msg_id", rfc5424OnlyKey, "message"}
 
 func toMsg(logParts format.LogParts, msgLen int64, err error) sputnik.Msg {
 	if logParts == nil {
@@ -252,11 +244,11 @@ func toMsg(logParts format.LogParts, msgLen int64, err error) sputnik.Msg {
 		return msgFromFormerMsg(logParts)
 	}
 
-	if _, exists := logParts[RFC5424OnlyKey]; exists {
+	if _, exists := logParts[rfc5424OnlyKey]; exists {
 		return toRFC5424(logParts)
 	}
 
-	if _, exists := logParts[RFC3164OnlyKey]; exists {
+	if _, exists := logParts[rfc3164OnlyKey]; exists {
 		return toRFC3164(logParts)
 	}
 
@@ -266,14 +258,14 @@ func toMsg(logParts format.LogParts, msgLen int64, err error) sputnik.Msg {
 
 func msgFromFormerMsg(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
-	formerMsg := logParts[FormerMessage].(string)
-	msg[FormerMessage] = formerMsg
+	formerMsg := logParts[Formermessage].(string)
+	msg[Formermessage] = formerMsg
 	return msg
 }
 
 func toRFC5424(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
-	msg[RFCFormatKey] = RFC5424
+	msg[rfcFormatKey] = rfc5424
 
 	for _, name := range rfc5424names {
 		v, exists := logParts[name]
@@ -289,7 +281,7 @@ func toRFC5424(logParts format.LogParts) sputnik.Msg {
 
 func toRFC3164(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
-	msg[RFCFormatKey] = RFC3164
+	msg[rfcFormatKey] = rfc3164
 
 	for _, name := range rfc3164names {
 		v, exists := logParts[name]
@@ -304,16 +296,3 @@ func toRFC3164(logParts format.LogParts) sputnik.Msg {
 }
 
 //////////////////////////////////////////////////////////////////////
-
-type Pack interface {
-	Pack(f func(name string) (value string, err error)) error
-}
-
-type Unpack interface {
-	Unpack(f func(name, value string) error) error
-}
-
-type PackUnpack interface {
-	Pack
-	Unpack
-}

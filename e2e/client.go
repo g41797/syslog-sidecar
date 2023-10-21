@@ -15,6 +15,11 @@ import (
 const (
 	SyslogClientName           = "syslogclient"
 	SyslogClientResponsibility = "syslogclient"
+
+	rfc3164 = "RFC3164"
+	rfc5424 = "RFC5424"
+
+	rfcFormatKey = "rfc"
 )
 
 func SyslogClientDescriptor() sputnik.BlockDescriptor {
@@ -208,14 +213,14 @@ func (cl *client) update(hdrs map[string]string) {
 	}
 	cl.recvN++
 
-	rfc, ok := hdrs[syslogsidecar.RFCFormatKey]
+	rfc, ok := hdrs[rfcFormatKey]
 	if !ok {
 		return
 	}
 
 	valName := "message"
 
-	if rfc == syslogsidecar.RFC3164 {
+	if rfc == rfc3164 {
 		valName = "content"
 	}
 
