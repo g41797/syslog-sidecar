@@ -19,9 +19,9 @@ func newparts(initialCapacity int) *parts {
 }
 
 // Initiates parts
-func (p *parts) set() {
+func (p *parts) set(initialCapacity int) {
 	if len(p.data) == 0 {
-		p.data = make([]rune, 128)
+		p.data = make([]rune, initialCapacity)
 	}
 	p.rewind()
 }

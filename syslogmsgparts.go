@@ -19,9 +19,9 @@ const (
 	ParserError     = "parsererror"
 	FormerMessage   = "data"
 	BrokenParts     = 2
-	BadMessageParts = 1
-	RFC5424Parts    = len(rfc5424parts) // RFC + 11
-	RFC3164Parts    = len(rfc3164parts) // RFC + 7
+	BadMessageParts = len(formerMessage)
+	RFC5424Parts    = len(rfc5424parts)
+	RFC3164Parts    = len(rfc3164parts)
 )
 
 type partType struct {
@@ -40,7 +40,7 @@ type partType struct {
 // https://documentation.solarwinds.com/en/success_center/kss/content/kss_adminguide_syslog_protocol.htm
 
 var rfc3164parts = [...]partType{
-	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogcar
+	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogsidecar
 	{"priority", "int"},
 	{"facility", "int"},
 	{SeverityKey, "int"},
@@ -53,7 +53,7 @@ var rfc3164parts = [...]partType{
 // RFC5424 parameters with type
 // https://hackmd.io/@njjack/syslogformat
 var rfc5424parts = [...]partType{
-	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogcar
+	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogsidecar
 	{"priority", "int"},
 	{"facility", "int"},
 	{SeverityKey, "int"},
@@ -76,38 +76,43 @@ type syslogmsgparts struct {
 	parts
 }
 
-func (mp *syslogmsgparts) pack(logParts format.LogParts, msgLen int64, err error) bool {
+func (mp *syslogmsgparts) pack(logParts format.LogParts, err error) error {
+
+	if mp == nil {
+		return fmt.Errorf("nil syslogmsgparts")
+	}
 
 	if logParts == nil {
-		return false
+		return fmt.Errorf("nil logParts")
 	}
 
 	if len(logParts) == 0 {
-		return false
+		return fmt.Errorf("empty logParts")
 	}
 
 	if err != nil {
 		mp.packParts(formerMessage[:], logParts)
-		return true
+		return nil
 	}
 
 	if _, exists := logParts[RFC5424OnlyKey]; exists {
 		logParts[RFCFormatKey] = RFC5424
 		mp.packParts(rfc5424parts[:], logParts)
-		return true
+		return nil
 	}
 
 	if _, exists := logParts[RFC3164OnlyKey]; exists {
 		logParts[RFCFormatKey] = RFC3164
 		mp.packParts(rfc3164parts[:], logParts)
-		return true
+		return nil
 	}
 	mp.packParts(formerMessage[:], logParts)
-	return true
+	return nil
 }
 
 func (mp *syslogmsgparts) packParts(parts []partType, logParts format.LogParts) {
-	mp.set()
+
+	mp.set(128)
 
 	count := len(parts)
 	mp.setRuneAt(0, rune(count))
@@ -125,23 +130,31 @@ func (mp *syslogmsgparts) packParts(parts []partType, logParts format.LogParts) 
 	}
 }
 
-func (mp *syslogmsgparts) Unpack(f func(name, value string) error) error {
+func (mp *syslogmsgparts) Unpack(put func(name, value string) error) error {
+
+	if mp == nil {
+		return fmt.Errorf("nil syslogmsgparts")
+	}
+
+	if len(mp.data) == 0 {
+		return fmt.Errorf("empty syslogmsgparts")
+	}
 
 	count, _ := mp.runeAt(0)
 
 	switch int(count) {
 	case BadMessageParts:
-		return mp.unpackParts(formerMessage[:], f)
+		return mp.unpackParts(formerMessage[:], put)
 	case RFC5424Parts:
-		return mp.unpackParts(rfc5424parts[:], f)
+		return mp.unpackParts(rfc5424parts[:], put)
 	case RFC3164Parts:
-		return mp.unpackParts(rfc3164parts[:], f)
+		return mp.unpackParts(rfc3164parts[:], put)
 	}
 
 	return fmt.Errorf("Wrong packed syslog message")
 }
 
-func (mp *syslogmsgparts) unpackParts(parts []partType, f func(name, value string) error) error {
+func (mp *syslogmsgparts) unpackParts(parts []partType, put func(name, value string) error) error {
 	mp.rewind()
 	count, _ := mp.runeAt(0)
 	mp.skip(int(count + 1))
@@ -152,7 +165,7 @@ func (mp *syslogmsgparts) unpackParts(parts []partType, f func(name, value strin
 		if err != nil {
 			return err
 		}
-		err = f(part.name, value)
+		err = put(part.name, value)
 		if err != nil {
 			return err
 		}
@@ -178,7 +191,7 @@ func toString(val any, typ string) string {
 		return result
 	case "time.Time":
 		tval, _ := val.(time.Time)
-		result = tval.UTC().String()
+		result = tval.Format(time.RFC3339)
 		return result
 	}
 

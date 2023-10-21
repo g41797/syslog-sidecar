@@ -44,7 +44,7 @@ Go framework for syslog sidecars creation
  - structured_data
  - **message**
 
-  ### Non-RFC parts
+### Non-RFC parts
 
   syslogsidecar adds rfc of produced message:
   - Part name: "rfc"
@@ -91,8 +91,11 @@ Go framework for syslog sidecars creation
 ```
 All messages with severity above 4 will be discarded. 
 
+### Timestamp format
 
-  ### Configuration
+syslogsidecar saves timestamps in [RFC3339](https://datatracker.ietf.org/doc/html/rfc3339) format
+
+### Configuration
 
   Configuration of receiver part of syslogsidecar is saved in the file syslogreceiver.json:
 ```json
