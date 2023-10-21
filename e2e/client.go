@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	SyslogClientName           = "syslogclient"
-	SyslogClientResponsibility = "syslogclient"
+	syslogClientName           = "syslogclient"
+	syslogClientResponsibility = "syslogclient"
 
 	rfc3164 = "RFC3164"
 	rfc5424 = "RFC5424"
@@ -22,12 +22,12 @@ const (
 	rfcFormatKey = "rfc"
 )
 
-func SyslogClientDescriptor() sputnik.BlockDescriptor {
-	return sputnik.BlockDescriptor{Name: SyslogClientName, Responsibility: SyslogClientResponsibility}
+func syslogClientDescriptor() sputnik.BlockDescriptor {
+	return sputnik.BlockDescriptor{Name: syslogClientName, Responsibility: syslogClientResponsibility}
 }
 
 func init() {
-	sputnik.RegisterBlockFactory(SyslogClientName, syslogClientBlockFactory)
+	sputnik.RegisterBlockFactory(syslogClientName, syslogClientBlockFactory)
 }
 
 func syslogClientBlockFactory() *sputnik.Block {
@@ -41,7 +41,7 @@ func syslogClientBlockFactory() *sputnik.Block {
 	return block
 }
 
-const MAX_LOG_MESSAGES = 1000000
+const max_LOG_MESSAGES = 1000000
 
 type client struct {
 	conf    syslogsidecar.SyslogConfiguration
@@ -187,7 +187,7 @@ func (cl *client) sendNext() {
 		return
 	}
 
-	if cl.currIndx >= MAX_LOG_MESSAGES {
+	if cl.currIndx >= max_LOG_MESSAGES {
 		return
 	}
 
@@ -234,7 +234,7 @@ func (cl *client) update(hdrs map[string]string) {
 		return
 	}
 
-	if msgIndex >= MAX_LOG_MESSAGES {
+	if msgIndex >= max_LOG_MESSAGES {
 		return
 	}
 
@@ -248,7 +248,7 @@ func (cl *client) update(hdrs map[string]string) {
 
 	cl.successN++
 
-	if cl.successN >= MAX_LOG_MESSAGES {
+	if cl.successN >= max_LOG_MESSAGES {
 		cl.stopflow()
 	}
 
@@ -264,13 +264,13 @@ func (cl *client) report() {
 }
 
 func (cl *client) openLoggers() error {
-	lgr, err := NewLogWriter(cl.conf, srslog.RFC3164Formatter)
+	lgr, err := newLogWriter(cl.conf, srslog.RFC3164Formatter)
 	if err != nil {
 		return err
 	}
 	cl.loggers[0] = lgr
 
-	lgr, err = NewLogWriter(cl.conf, srslog.RFC5424Formatter)
+	lgr, err = newLogWriter(cl.conf, srslog.RFC5424Formatter)
 	if err != nil {
 		cl.loggers[0].Close()
 		cl.loggers[0] = nil
@@ -288,7 +288,7 @@ func (cl *client) closeLoggers() {
 	}
 }
 
-func NewLogWriter(cnf syslogsidecar.SyslogConfiguration, rfcForm srslog.Formatter) (*srslog.Writer, error) {
+func newLogWriter(cnf syslogsidecar.SyslogConfiguration, rfcForm srslog.Formatter) (*srslog.Writer, error) {
 	w, err := srslog.Dial("tcp", cnf.ADDRTCP, srslog.LOG_ALERT, "re2e")
 	if err != nil {
 		return nil, err

@@ -15,7 +15,7 @@ const (
 	WriterResponsibility = "syslogwriter"
 )
 
-func ReceiverDescriptor() sputnik.BlockDescriptor {
+func receiverDescriptor() sputnik.BlockDescriptor {
 	return sputnik.BlockDescriptor{Name: ReceiverName, Responsibility: ReceiverResponsibility}
 }
 
@@ -35,7 +35,7 @@ func receiverBlockFactory() *sputnik.Block {
 
 type receiver struct {
 	conf     SyslogConfiguration
-	syslogd  *Server
+	syslogd  *server
 	producer sputnik.BlockCommunicator
 
 	// Used for synchronization
@@ -50,7 +50,7 @@ func (rcv *receiver) init(fact sputnik.ConfFactory) error {
 		return err
 	}
 
-	syslogd := NewServer(rcv.conf)
+	syslogd := newServer(rcv.conf)
 
 	if err := syslogd.Init(); err != nil {
 		return err

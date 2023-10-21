@@ -13,9 +13,9 @@ import (
 // Satellite has 2 app. blocks:
 var blkList []sputnik.BlockDescriptor = []sputnik.BlockDescriptor{
 	// events Producer
-	ProducerDescriptor(),
+	producerDescriptor(),
 	// syslog Receiver
-	ReceiverDescriptor(),
+	receiverDescriptor(),
 }
 
 type recvTest struct {

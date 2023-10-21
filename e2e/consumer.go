@@ -8,16 +8,16 @@ import (
 )
 
 const (
-	SyslogConsumerName           = "syslogconsumer"
-	SyslogConsumerResponsibility = "syslogconsumer"
+	syslogConsumerName           = "syslogconsumer"
+	syslogConsumerResponsibility = "syslogconsumer"
 )
 
-func SyslogConsumerDescriptor() sputnik.BlockDescriptor {
-	return sputnik.BlockDescriptor{Name: SyslogConsumerName, Responsibility: SyslogConsumerResponsibility}
+func syslogConsumerDescriptor() sputnik.BlockDescriptor {
+	return sputnik.BlockDescriptor{Name: syslogConsumerName, Responsibility: syslogConsumerResponsibility}
 }
 
 func init() {
-	sputnik.RegisterBlockFactory(SyslogConsumerName, syslogConsumerBlockFactory)
+	sputnik.RegisterBlockFactory(syslogConsumerName, syslogConsumerBlockFactory)
 }
 
 func syslogConsumerBlockFactory() *sputnik.Block {
@@ -92,7 +92,7 @@ func (cons *consumer) brokerDisconnected() {
 // Run
 func (cons *consumer) run(bc sputnik.BlockCommunicator) {
 
-	cons.sender, _ = bc.Communicator(SyslogClientResponsibility)
+	cons.sender, _ = bc.Communicator(syslogClientResponsibility)
 
 	defer close(cons.done)
 	defer cons.disconnect()

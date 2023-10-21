@@ -31,7 +31,7 @@ func producerBlockFactory() *sputnik.Block {
 	return block
 }
 
-func ProducerDescriptor() sputnik.BlockDescriptor {
+func producerDescriptor() sputnik.BlockDescriptor {
 	return sputnik.BlockDescriptor{Name: ProducerName, Responsibility: ProducerResponsibility}
 }
 

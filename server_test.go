@@ -27,7 +27,7 @@ type srvTest struct {
 	t          *testing.T
 	q          *kissngoqueue.Queue[sputnik.Msg]
 	syslogconf SyslogConfiguration
-	srv        *Server
+	srv        *server
 	client     *client
 }
 
@@ -39,7 +39,7 @@ func newTest(t *testing.T) *srvTest {
 
 func (test *srvTest) start() {
 	test.syslogconf = defaultServerConfiguration()
-	test.srv = NewServer(test.syslogconf)
+	test.srv = newServer(test.syslogconf)
 
 	err := test.srv.Init()
 	if err != nil {

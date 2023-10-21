@@ -54,20 +54,20 @@ type SyslogConfiguration struct {
 	ROOT_CA_PATH     string
 }
 
-type Server struct {
+type server struct {
 	config  SyslogConfiguration
 	bc      atomic.Pointer[sputnik.BlockCommunicator]
 	syslogd *syslog.Server
 }
 
-func NewServer(conf SyslogConfiguration) *Server {
-	srv := new(Server)
+func newServer(conf SyslogConfiguration) *server {
+	srv := new(server)
 	srv.config = conf
 	srv.bc = atomic.Pointer[sputnik.BlockCommunicator]{}
 	return srv
 }
 
-func (s *Server) Init() error {
+func (s *server) Init() error {
 	s.syslogd = syslog.NewServer()
 	s.syslogd.SetFormat(syslog.Automatic)
 	s.syslogd.SetHandler(s)
@@ -110,20 +110,20 @@ func (s *Server) Init() error {
 	return nil
 }
 
-func (s *Server) Start() error {
+func (s *server) Start() error {
 	return s.syslogd.Boot()
 }
 
-func (s *Server) Finish() error {
+func (s *server) Finish() error {
 	err := s.syslogd.Kill()
 	return err
 }
 
-func (s *Server) SetupHandling(bc sputnik.BlockCommunicator) {
+func (s *server) SetupHandling(bc sputnik.BlockCommunicator) {
 	s.bc.Store(&bc)
 }
 
-func (s *Server) Handle(logParts format.LogParts, msgLen int64, err error) {
+func (s *server) Handle(logParts format.LogParts, msgLen int64, err error) {
 	if s.bc.Load() == nil {
 		return
 	}
@@ -137,7 +137,7 @@ func (s *Server) Handle(logParts format.LogParts, msgLen int64, err error) {
 	(*s.bc.Load()).Send(msg)
 }
 
-func (s *Server) forHandle(logParts format.LogParts) bool {
+func (s *server) forHandle(logParts format.LogParts) bool {
 	if s.config.SEVERITYLEVEL == -1 {
 		return false
 	}
