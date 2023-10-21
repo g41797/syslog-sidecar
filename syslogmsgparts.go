@@ -9,154 +9,6 @@ import (
 	"github.com/g41797/sputnik"
 )
 
-type syslogmsgparts struct {
-	parts
-}
-
-func (mp *syslogmsgparts) Extract(ef func(name, value string) error) error {
-
-	count, _ := mp.runeAt(0)
-
-	switch int(count) {
-	case BadMessageParts:
-		return mp.extractBadMessage(ef)
-	case RFC5424Parts:
-		return mp.extractRFCMessage(rfc5424names[:], ef)
-	case RFC3164Parts:
-		return mp.extractRFCMessage(rfc3164names[:], ef)
-	}
-
-	return fmt.Errorf("Wrong packed syslog message")
-}
-
-func (mp *syslogmsgparts) extractBadMessage(extr func(name, value string) error) error {
-	mlen, _ := mp.runeAt(1)
-	mp.skip(2)
-
-	value, err := mp.part(int(mlen))
-
-	if err != nil {
-		return err
-	}
-
-	return extr(FormerMessage, value)
-}
-
-func (mp *syslogmsgparts) extractRFCMessage(names []string, extr func(name, value string) error) error {
-	mp.rewind()
-
-	count, _ := mp.runeAt(1)
-	mp.skip(int(count + 1))
-
-	vlen, _ := mp.runeAt(2)
-	value, err := mp.part(int(vlen))
-	if err != nil {
-		return err
-	}
-	err = extr(RFCFormatKey, value)
-	if err != nil {
-		return err
-	}
-
-	for i, name := range names {
-		vlen, _ := mp.runeAt(2 + i)
-		value, err := mp.part(int(vlen))
-		if err != nil {
-			return err
-		}
-		err = extr(name, value)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (mp *syslogmsgparts) fillMsg(logParts format.LogParts, msgLen int64, err error) bool {
-
-	if logParts == nil {
-		return false
-	}
-
-	if len(logParts) == 0 {
-		return false
-	}
-
-	if err != nil {
-		mp.fillFormerMessage(logParts)
-		return true
-	}
-
-	if _, exists := logParts[RFC5424OnlyKey]; exists {
-		mp.fillRFC5424(logParts)
-		return true
-	}
-
-	if _, exists := logParts[RFC3164OnlyKey]; exists {
-		mp.fillRFC3164(logParts)
-		return true
-	}
-	mp.fillFormerMessage(logParts)
-	return true
-}
-
-func (mp *syslogmsgparts) set() {
-	if len(mp.data) == 0 {
-		mp.data = make([]rune, 128)
-	}
-}
-
-func (mp *syslogmsgparts) fillFormerMessage(logParts format.LogParts) {
-	mp.set()
-	mp.setRuneAt(0, 1)
-	mp.skip(2)
-	mp.setRuneAt(1, rune(mp.appendText(logParts[FormerMessage].(string))))
-}
-
-func (mp *syslogmsgparts) fillRFC5424(logParts format.LogParts) {
-	mp.set()
-
-	count := 1 + len(rfc5424names)
-	mp.setRuneAt(0, rune(count))
-	mp.skip(count + 1)
-
-	mp.setRuneAt(1, rune(mp.appendText(RFC5424)))
-
-	for i, name := range rfc5424names {
-		v, exists := logParts[name]
-
-		if !exists {
-			mp.setRuneAt(i+2, 0)
-			continue
-		}
-
-		mp.setRuneAt(i+2, rune(mp.appendText(toString(v, rfc5424props[name]))))
-	}
-}
-
-func (mp *syslogmsgparts) fillRFC3164(logParts format.LogParts) {
-	mp.set()
-
-	count := 1 + len(rfc3164names)
-	mp.setRuneAt(0, rune(count))
-	mp.skip(count + 1)
-
-	mp.setRuneAt(1, rune(mp.appendText(RFC3164)))
-
-	for i, name := range rfc3164names {
-		v, exists := logParts[name]
-
-		if !exists {
-			mp.setRuneAt(i+2, 0)
-			continue
-		}
-
-		mp.setRuneAt(i+2, rune(mp.appendText(toString(v, rfc3164props[name]))))
-	}
-
-}
-
 const (
 	RFC3164OnlyKey  = "tag"
 	RFC5424OnlyKey  = "structured_data"
@@ -168,20 +20,173 @@ const (
 	FormerMessage   = "data"
 	BrokenParts     = 2
 	BadMessageParts = 1
-	RFC5424Parts    = 12 // RFC + 11
-	RFC3164Parts    = 8  // RFC + 7
+	RFC5424Parts    = len(rfc5424parts) // RFC + 11
+	RFC3164Parts    = len(rfc3164parts) // RFC + 7
 )
+
+type partType struct {
+	name string
+	kind string
+}
 
 //
 // https://blog.datalust.co/seq-input-syslog/
 //
-
 // ------------------------------------
 // priority = (facility * 8) + severity
 // ------------------------------------
 
 // RFC3164 parameters with type
 // https://documentation.solarwinds.com/en/success_center/kss/content/kss_adminguide_syslog_protocol.htm
+
+var rfc3164parts = [...]partType{
+	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogcar
+	{"priority", "int"},
+	{"facility", "int"},
+	{SeverityKey, "int"},
+	{"timestamp", "time.Time"},
+	{"hostname", "string"},
+	{RFC3164OnlyKey, "string"},
+	{"content", "string"},
+}
+
+// RFC5424 parameters with type
+// https://hackmd.io/@njjack/syslogformat
+var rfc5424parts = [...]partType{
+	{RFCFormatKey, "string"}, // Non-RFC: Added by syslogcar
+	{"priority", "int"},
+	{"facility", "int"},
+	{SeverityKey, "int"},
+	{"version", "int"},
+	{"timestamp", "time.Time"},
+	{"hostname", "string"},
+	{"app_name", "string"},
+	{"proc_id", "string"},
+	{"msg_id", "string"},
+	{RFC5424OnlyKey, "string"},
+	{"message", "string"},
+}
+
+// Former message - for badly formatted syslog message
+var formerMessage = [...]partType{
+	{FormerMessage, "string"},
+}
+
+type syslogmsgparts struct {
+	parts
+}
+
+func (mp *syslogmsgparts) pack(logParts format.LogParts, msgLen int64, err error) bool {
+
+	if logParts == nil {
+		return false
+	}
+
+	if len(logParts) == 0 {
+		return false
+	}
+
+	if err != nil {
+		mp.packParts(formerMessage[:], logParts)
+		return true
+	}
+
+	if _, exists := logParts[RFC5424OnlyKey]; exists {
+		logParts[RFCFormatKey] = RFC5424
+		mp.packParts(rfc5424parts[:], logParts)
+		return true
+	}
+
+	if _, exists := logParts[RFC3164OnlyKey]; exists {
+		logParts[RFCFormatKey] = RFC3164
+		mp.packParts(rfc3164parts[:], logParts)
+		return true
+	}
+	mp.packParts(formerMessage[:], logParts)
+	return true
+}
+
+func (mp *syslogmsgparts) packParts(parts []partType, logParts format.LogParts) {
+	mp.set()
+
+	count := len(parts)
+	mp.setRuneAt(0, rune(count))
+	mp.skip(count + 1)
+
+	for i, part := range parts {
+		v, exists := logParts[part.name]
+
+		if !exists {
+			mp.setRuneAt(i+1, 0)
+			continue
+		}
+
+		mp.setRuneAt(i+1, rune(mp.appendText(toString(v, part.kind))))
+	}
+}
+
+func (mp *syslogmsgparts) Unpack(f func(name, value string) error) error {
+
+	count, _ := mp.runeAt(0)
+
+	switch int(count) {
+	case BadMessageParts:
+		return mp.unpackParts(formerMessage[:], f)
+	case RFC5424Parts:
+		return mp.unpackParts(rfc5424parts[:], f)
+	case RFC3164Parts:
+		return mp.unpackParts(rfc3164parts[:], f)
+	}
+
+	return fmt.Errorf("Wrong packed syslog message")
+}
+
+func (mp *syslogmsgparts) unpackParts(parts []partType, f func(name, value string) error) error {
+	mp.rewind()
+	count, _ := mp.runeAt(0)
+	mp.skip(int(count + 1))
+
+	for i, part := range parts {
+		vlen, _ := mp.runeAt(1 + i)
+		value, err := mp.part(int(vlen))
+		if err != nil {
+			return err
+		}
+		err = f(part.name, value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func toString(val any, typ string) string {
+	result := ""
+
+	if val == nil {
+		return result
+	}
+
+	switch typ {
+	case "string":
+		result, _ = val.(string)
+		return result
+	case "int":
+		intval, _ := val.(int)
+		result = strconv.Itoa(intval)
+		return result
+	case "time.Time":
+		tval, _ := val.(time.Time)
+		result = tval.UTC().String()
+		return result
+	}
+
+	return result
+}
+
+//////////////////////////////////////////////////////////////////////
+
 func RFC3164Props() map[string]string {
 	return map[string]string{
 		"priority":     "int",
@@ -199,8 +204,6 @@ var rfc3164props = RFC3164Props()
 var rfc3164names = [7]string{
 	"priority", "facility", SeverityKey, "timestamp", "hostname", RFC3164OnlyKey, "content"}
 
-// RFC5424 parameters with type
-// https://hackmd.io/@njjack/syslogformat
 func RFC5424Props() map[string]string {
 	return map[string]string{
 		"priority":     "int",
@@ -255,7 +258,6 @@ func msgFromFormerMsg(logParts format.LogParts) sputnik.Msg {
 	return msg
 }
 
-// Convert syslog RFC5424 values to strings
 func toRFC5424(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
 	msg[RFCFormatKey] = RFC5424
@@ -272,7 +274,6 @@ func toRFC5424(logParts format.LogParts) sputnik.Msg {
 	return msg
 }
 
-// Convert syslog RFC3164 values to strings
 func toRFC3164(logParts format.LogParts) sputnik.Msg {
 	msg := make(sputnik.Msg)
 	msg[RFCFormatKey] = RFC3164
@@ -289,26 +290,17 @@ func toRFC3164(logParts format.LogParts) sputnik.Msg {
 	return msg
 }
 
-func toString(val any, typ string) string {
-	result := ""
+//////////////////////////////////////////////////////////////////////
 
-	if val == nil {
-		return result
-	}
+type Pack interface {
+	Pack(f func(name string) (value string, err error)) error
+}
 
-	switch typ {
-	case "string":
-		result, _ = val.(string)
-		return result
-	case "int":
-		intval, _ := val.(int)
-		result = strconv.Itoa(intval)
-		return result
-	case "time.Time":
-		tval, _ := val.(time.Time)
-		result = tval.UTC().String()
-		return result
-	}
+type Unpack interface {
+	Unpack(f func(name, value string) error) error
+}
 
-	return result
+type PackUnpack interface {
+	Pack
+	Unpack
 }

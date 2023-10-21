@@ -18,6 +18,14 @@ func newparts(initialCapacity int) *parts {
 	return &parts{data: make([]rune, initialCapacity)}
 }
 
+// Initiates parts
+func (p *parts) set() {
+	if len(p.data) == 0 {
+		p.data = make([]rune, 128)
+	}
+	p.rewind()
+}
+
 // Appends a text to the parts instance
 func (p *parts) appendText(text string) int {
 	if len(text) == 0 {
