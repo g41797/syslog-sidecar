@@ -204,7 +204,7 @@ func (cl *client) sendNext() {
 
 func (cl *client) stopflow() {
 	cl.started = false
-	SendQuit()
+	sendQuit()
 }
 
 func (cl *client) update(hdrs map[string]string) {
@@ -297,7 +297,7 @@ func newLogWriter(cnf syslogsidecar.SyslogConfiguration, rfcForm srslog.Formatte
 	return w, nil
 }
 
-func SendQuit() error {
+func sendQuit() error {
 	cproc, err := os.FindProcess(os.Getpid())
 	if err != nil {
 		return err

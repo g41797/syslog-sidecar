@@ -40,6 +40,76 @@ func Test_PackUnpackBadlyFormatted(t *testing.T) {
 	}
 }
 
+func Test_PackUnpackRFC3164Msg(t *testing.T) {
+	testPackUnpackRFCMsg(makeRFC3164Msg(), rfc3164parts[:], t)
+}
+
+func Test_PackUnpackRFC5424Msg(t *testing.T) {
+	testPackUnpackRFCMsg(makeRFC5424Msg(), rfc5424parts[:], t)
+}
+
+func testPackUnpackRFCMsg(in map[string]string, descr []partType, t *testing.T) {
+
+	logparts, err := toLogParts(in, descr)
+	if err != nil {
+		t.Fatalf("toLogParts error %v", err)
+	}
+
+	msgparts := new(syslogmsgparts)
+
+	err = msgparts.pack(logparts, nil)
+	if err != nil {
+		t.Errorf("pack error %v", err)
+	}
+
+	hlp := newpuhelper()
+
+	err = msgparts.Unpack(hlp.put)
+	if err != nil {
+		t.Errorf("Unpack error %v", err)
+	}
+
+	if !reflect.DeepEqual(in, hlp.slmparts) {
+		t.Errorf("Expected %v Actual %v", in, hlp.slmparts)
+	}
+}
+
+func makeRFC3164Msg() map[string]string {
+
+	msg := map[string]string{
+		rfcFormatKey:   rfc3164,
+		"priority":     "1",
+		"facility":     "2",
+		severityKey:    "3",
+		"timestamp":    time.Now().Format(time.RFC3339),
+		"hostname":     "4",
+		rfc3164OnlyKey: "5",
+		"content":      "content",
+	}
+
+	return msg
+}
+
+func makeRFC5424Msg() map[string]string {
+
+	msg := map[string]string{
+		rfcFormatKey:   rfc5424,
+		"priority":     "1",
+		"facility":     "2",
+		severityKey:    "3",
+		"version":      "4",
+		"timestamp":    time.Now().Format(time.RFC3339),
+		"hostname":     "5",
+		"app_name":     "6",
+		"proc_id":      "7",
+		"msg_id":       "8",
+		rfc5424OnlyKey: "9",
+		"message":      "message",
+	}
+
+	return msg
+}
+
 type puhelper struct {
 	slmparts map[string]string
 }
