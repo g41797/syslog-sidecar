@@ -53,14 +53,12 @@ func (mpr *msgProducer) Produce(msg sputnik.Msg) error {
 		return fmt.Errorf("subscriber for topic %s does not exist", mpr.conf.TOPIC)
 	}
 
-	props := make(map[string]string)
+	props, err := syslogsidecar.UnpackToMap(msg)
 
-	for k, v := range msg {
-		vstr, ok := v.(string)
-		if !ok {
-			continue
-		}
-		props[k] = vstr
+	syslogsidecar.Put(msg)
+
+	if err != nil {
+		return err
 	}
 
 	mpr.ebus.Publish(mpr.conf.TOPIC, props)
