@@ -28,15 +28,15 @@ func Test_PackUnpackBadlyFormatted(t *testing.T) {
 		t.Errorf("pack error %v", err)
 	}
 
-	hlp := newpuhelper()
+	hlp := NewUnpackHelper()
 
-	err = msgparts.Unpack(hlp.put)
+	err = msgparts.Unpack(hlp.Put)
 	if err != nil {
 		t.Errorf("Unpack error %v", err)
 	}
 
-	if !reflect.DeepEqual(in, hlp.slmparts) {
-		t.Errorf("Expected %v Actual %v", in, hlp.slmparts)
+	if !reflect.DeepEqual(in, hlp.LogParts) {
+		t.Errorf("Expected %v Actual %v", in, hlp.LogParts)
 	}
 }
 
@@ -62,15 +62,15 @@ func testPackUnpackRFCMsg(in map[string]string, descr []partType, t *testing.T) 
 		t.Errorf("pack error %v", err)
 	}
 
-	hlp := newpuhelper()
+	hlp := NewUnpackHelper()
 
-	err = msgparts.Unpack(hlp.put)
+	err = msgparts.Unpack(hlp.Put)
 	if err != nil {
 		t.Errorf("Unpack error %v", err)
 	}
 
-	if !reflect.DeepEqual(in, hlp.slmparts) {
-		t.Errorf("Expected %v Actual %v", in, hlp.slmparts)
+	if !reflect.DeepEqual(in, hlp.LogParts) {
+		t.Errorf("Expected %v Actual %v", in, hlp.LogParts)
 	}
 }
 
@@ -108,29 +108,6 @@ func makeRFC5424Msg() map[string]string {
 	}
 
 	return msg
-}
-
-type puhelper struct {
-	slmparts map[string]string
-}
-
-func newpuhelper() puhelper {
-	var result puhelper
-	result.slmparts = make(map[string]string)
-	return result
-}
-
-func (hlp *puhelper) put(name, value string) error {
-	if hlp.slmparts == nil {
-		return fmt.Errorf("nil slmparts")
-	}
-
-	if _, present := hlp.slmparts[name]; present {
-		return fmt.Errorf("%s already exists", name)
-	}
-
-	hlp.slmparts[name] = value
-	return nil
 }
 
 func toLogParts(in map[string]string, parts []partType) (format.LogParts, error) {

@@ -68,6 +68,12 @@ type syslogmsgparts struct {
 	parts
 }
 
+func newsyslogmsgparts() *syslogmsgparts {
+	result := new(syslogmsgparts)
+	result.set(128)
+	return result
+}
+
 func (mp *syslogmsgparts) pack(logParts format.LogParts, err error) error {
 
 	if mp == nil {
@@ -190,48 +196,8 @@ func toString(val any, typ string) string {
 	return result
 }
 
-//////////////////////////////////////////////////////////////////////
-
-func RFC3164Props() map[string]string {
-	return map[string]string{
-		"priority":     "int",
-		"facility":     "int",
-		severityKey:    "int",
-		"timestamp":    "time.Time",
-		"hostname":     "string",
-		rfc3164OnlyKey: "string",
-		"content":      "string",
-	}
-}
-
-var rfc3164props = RFC3164Props()
-
-var rfc3164names = [7]string{
-	"priority", "facility", severityKey, "timestamp", "hostname", rfc3164OnlyKey, "content"}
-
-func RFC5424Props() map[string]string {
-	return map[string]string{
-		"priority":     "int",
-		"facility":     "int",
-		severityKey:    "int",
-		"version":      "int",
-		"timestamp":    "time.Time",
-		"hostname":     "string",
-		"app_name":     "string",
-		"proc_id":      "string",
-		"msg_id":       "string",
-		rfc5424OnlyKey: "string",
-		"message":      "string",
-	}
-}
-
-var rfc5424props = RFC5424Props()
-
-var rfc5424names = [11]string{
-	"priority", "facility", severityKey, "version", "timestamp", "hostname",
-	"app_name", "proc_id", "msg_id", rfc5424OnlyKey, "message"}
-
 func toMsg(logParts format.LogParts, msgLen int64, err error) sputnik.Msg {
+
 	if logParts == nil {
 		return nil
 	}
@@ -240,59 +206,15 @@ func toMsg(logParts format.LogParts, msgLen int64, err error) sputnik.Msg {
 		return nil
 	}
 
-	if err != nil {
-		return msgFromFormerMsg(logParts)
-	}
+	msg := Get()
 
-	if _, exists := logParts[rfc5424OnlyKey]; exists {
-		return toRFC5424(logParts)
-	}
+	slm, _ := msg[syslogmessage].(*syslogmsgparts)
 
-	if _, exists := logParts[rfc3164OnlyKey]; exists {
-		return toRFC3164(logParts)
-	}
-
-	return msgFromFormerMsg(logParts)
-
-}
-
-func msgFromFormerMsg(logParts format.LogParts) sputnik.Msg {
-	msg := make(sputnik.Msg)
-	formerMsg := logParts[Formermessage].(string)
-	msg[Formermessage] = formerMsg
-	return msg
-}
-
-func toRFC5424(logParts format.LogParts) sputnik.Msg {
-	msg := make(sputnik.Msg)
-	msg[rfcFormatKey] = rfc5424
-
-	for _, name := range rfc5424names {
-		v, exists := logParts[name]
-		if !exists {
-			msg[name] = ""
-			continue
-		}
-		msg[name] = toString(v, rfc5424props[name])
+	perr := slm.pack(logParts, err)
+	if perr != nil {
+		return nil
 	}
 
 	return msg
+
 }
-
-func toRFC3164(logParts format.LogParts) sputnik.Msg {
-	msg := make(sputnik.Msg)
-	msg[rfcFormatKey] = rfc3164
-
-	for _, name := range rfc3164names {
-		v, exists := logParts[name]
-		if !exists {
-			msg[name] = ""
-			continue
-		}
-		msg[name] = toString(v, rfc3164props[name])
-	}
-
-	return msg
-}
-
-//////////////////////////////////////////////////////////////////////

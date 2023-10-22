@@ -133,7 +133,15 @@ func (rt *recvTest) exchange(t *testing.T) {
 		t.Errorf("failed receive from test queue")
 	}
 
-	recvlog, _ := msg["message"].(string)
+	msgparts, err := UnpackToMap(msg)
+
+	Put(msg)
+
+	if err != nil {
+		t.Errorf("unpack message error %v", err)
+	}
+
+	recvlog, _ := msgparts["message"]
 
 	if logText != recvlog {
 		t.Errorf("Expected %s Received %s", logText, recvlog)
