@@ -5,6 +5,7 @@ import (
 
 	"github.com/g41797/go-syslog"
 	"github.com/g41797/go-syslog/format"
+	"github.com/g41797/kissngoqueue"
 	"github.com/g41797/sputnik"
 )
 
@@ -58,12 +59,14 @@ type server struct {
 	config  SyslogConfiguration
 	bc      atomic.Pointer[sputnik.BlockCommunicator]
 	syslogd *syslog.Server
+	q       *kissngoqueue.Queue[format.LogParts]
 }
 
 func newServer(conf SyslogConfiguration) *server {
 	srv := new(server)
 	srv.config = conf
 	srv.bc = atomic.Pointer[sputnik.BlockCommunicator]{}
+	srv.q = kissngoqueue.NewQueue[format.LogParts]()
 	return srv
 }
 
@@ -107,6 +110,8 @@ func (s *server) Init() error {
 		}
 	}
 
+	go s.processLogParts()
+
 	return nil
 }
 
@@ -115,8 +120,8 @@ func (s *server) Start() error {
 }
 
 func (s *server) Finish() error {
-	err := s.syslogd.Kill()
-	return err
+	s.q.Cancel()
+	return s.syslogd.Kill()
 }
 
 func (s *server) SetupHandling(bc sputnik.BlockCommunicator) {
@@ -132,9 +137,22 @@ func (s *server) Handle(logParts format.LogParts, msgLen int64, err error) {
 		return
 	}
 
-	msg := toMsg(logParts, msgLen, err)
+	s.q.PutMT(logParts)
+}
 
-	(*s.bc.Load()).Send(msg)
+func (s *server) startLogPartsProcessor() {
+
+}
+
+func (s *server) processLogParts() {
+	for {
+		lp, ok := s.q.Get()
+		if !ok {
+			break
+		}
+		(*s.bc.Load()).Send(toMsg(lp))
+	}
+	return
 }
 
 func (s *server) forHandle(logParts format.LogParts) bool {

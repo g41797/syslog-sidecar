@@ -23,7 +23,7 @@ func Test_PackUnpackBadlyFormatted(t *testing.T) {
 
 	msgparts := new(syslogmsgparts)
 
-	err = msgparts.pack(logparts, fmt.Errorf("bad formatted message"))
+	err = msgparts.pack(logparts)
 	if err != nil {
 		t.Errorf("pack error %v", err)
 	}
@@ -57,7 +57,7 @@ func testPackUnpackRFCMsg(in map[string]string, descr []partType, t *testing.T) 
 
 	msgparts := new(syslogmsgparts)
 
-	err = msgparts.pack(logparts, nil)
+	err = msgparts.pack(logparts)
 	if err != nil {
 		t.Errorf("pack error %v", err)
 	}

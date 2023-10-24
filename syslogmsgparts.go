@@ -74,7 +74,7 @@ func newsyslogmsgparts() *syslogmsgparts {
 	return result
 }
 
-func (mp *syslogmsgparts) pack(logParts format.LogParts, err error) error {
+func (mp *syslogmsgparts) pack(logParts format.LogParts) error {
 
 	if mp == nil {
 		return fmt.Errorf("nil syslogmsgparts")
@@ -88,7 +88,7 @@ func (mp *syslogmsgparts) pack(logParts format.LogParts, err error) error {
 		return fmt.Errorf("empty logParts")
 	}
 
-	if err != nil {
+	if _, exists := logParts[Formermessage]; exists {
 		mp.packParts(formerMessage[:], logParts)
 		return nil
 	}
@@ -196,7 +196,7 @@ func toString(val any, typ string) string {
 	return result
 }
 
-func toMsg(logParts format.LogParts, msgLen int64, err error) sputnik.Msg {
+func toMsg(logParts format.LogParts) sputnik.Msg {
 
 	if logParts == nil {
 		return nil
@@ -210,7 +210,7 @@ func toMsg(logParts format.LogParts, msgLen int64, err error) sputnik.Msg {
 
 	slm, _ := msg[syslogmessage].(*syslogmsgparts)
 
-	perr := slm.pack(logParts, err)
+	perr := slm.pack(logParts)
 	if perr != nil {
 		return nil
 	}
