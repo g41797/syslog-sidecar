@@ -7,7 +7,8 @@ Go framework for syslog sidecars creation
 
   **syslogsidecar**:
   - receives logs intended for [syslogd](https://linux.die.net/man/8/syslogd)
-  - produces messages to the broker 
+  - parses, validates and filters messages
+  - forwards(produces) messages to the broker in easy for further processing _*key=value*_ format 
      
   Supported RFCs:
   - [RFC3164](<https://tools.ietf.org/html/rfc3164>)
@@ -82,14 +83,14 @@ Go framework for syslog sidecars creation
  - 6 info
  - 7 debug
 
-  syslogsidecar filters messages by level according to value in configuration:
+  syslogsidecar filters messages by level according to value in configuration, e.g. for
 ```json
 {
   "SEVERITYLEVEL": 4,
   ...........
 }
 ```
-All messages with severity above 4 will be discarded. 
+all messages with severity above 4 will be discarded. 
 
 ### Timestamp format
 
@@ -164,9 +165,7 @@ type SyslogConfiguration struct {
 You can use [starter](https://github.com/g41797/starter#readme) for automatic start/stop docker containers with broker services.
 
 
- ### Examples
+ ### Implementations are based on syslogsidecar
 
  - syslog for [Memphis](https://memphis.dev) is part of [memphis-protocol-adapter](https://github.com/g41797/memphis-protocol-adapter) project
  - syslog for [NATS](https://nats.io) - [syslog2nats](https://github.com/g41797/syslog2nats)
-
- **Both implementations are still in initial stage. Don't use in production!!!**
