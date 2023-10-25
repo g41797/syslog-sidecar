@@ -421,3 +421,19 @@ Setting SO_REUSEPORT and similar socket options in Go 1.11
 Cancelling a net.Listener via Context in Golang
 - https://stackoverflow.com/questions/66755407/cancelling-a-net-listener-via-context-in-golang
 
+
+Analysis of UDP packet loss problem in Linux system
+- https://alibaba-cloud.medium.com/analysis-of-udp-packet-loss-problem-in-linux-system-a5b6bd59d97b#
+
+Why syslog over UDP loses messages and how to avoid that
+- https://axoflow.com/syslog-over-udp-message-loss-1/#
+
+Setting SO_REUSEPORT and similar socket options in Go
+- https://rohanverma.net/blog/2019/01/08/setting-so_reuseport-and-similar-socket-options-in-go-1-11/
+
+How to Set Go net/http Socket Options
+- https://iximiuz.com/en/posts/go-net-http-setsockopt-example/
+
+Where do Sockets live in Go?
+- https://about.sourcegraph.com/blog/go/gophercon-2019-socket-to-me-where-do-sockets-live-in-go
+
