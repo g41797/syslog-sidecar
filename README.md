@@ -56,24 +56,8 @@ Go framework for syslog sidecars creation
   syslogsidecar creates only one part for badly formatted message - former syslog message:
   - Part name: "data"
   
-  ### Facilities and severities
-
-  Valid facility names are:
-  - auth
-  - authpriv for security information of a sensitive nature
-  - cron
-  - daemon
-  - ftp
-  - kern
-  - lpr
-  - mail
-  - news
-  - syslog
-  - user
-  - uucp
-  - local0-local7
-
-    Valid severity levels and names are:
+  ### Severities
+   Valid severity levels and names are:
  - 0 emerg
  - 1 alert
  - 2 crit
