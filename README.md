@@ -1,14 +1,13 @@
-# syslogsidecar
+# Go framework for syslog sidecars creation 
  
 [![GoDev](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/g41797/syslogsidecar)
 [![Go](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml/badge.svg)](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml)
 
-Go framework for syslog sidecars creation
 
   **syslogsidecar**:
   - receives logs intended for [syslogd](https://linux.die.net/man/8/syslogd)
   - parses, validates and filters messages
-  - forwards(produces) messages to the broker in easy for further processing _*key=value*_ format 
+  - forwards(produces) messages to the broker in easy for further processing _*partname=partvalue*_ format. Names of the parts see below.
      
   Supported RFCs:
   - [RFC3164](<https://tools.ietf.org/html/rfc3164>)
@@ -22,28 +21,28 @@ Go framework for syslog sidecars creation
   RFC3164 is oldest syslog RFC, syslogsidecar supports it for old syslogd clients.
 
   RFC3164 message consists of following symbolic parts:
-  - priority
-  - facility 
-  - severity
-  - timestamp
-  - hostname
-  - tag
-  - **content**
+  - "priority" (priority = facility * 8 + severity Level)
+  - "facility" 
+  - "severity"
+  - "timestamp"
+  - "hostname"
+  - "tag"
+  - "**content**" (text of the message)
 
   ### RFC5424
 
   RFC5424 message consists of following symbolic parts:
- - priority
- - facility 
- - severity
- - timestamp
- - hostname
- - version
- - app_name
- - proc_id
- - msg_id
- - structured_data
- - **message**
+ - "priority" (priority = facility * 8 + severity level)
+ - "facility" 
+ - "severity"
+ - "timestamp"
+ - "hostname"
+ - "version"
+ - "app_name"
+ - "proc_id"
+ - "msg_id"
+ - "structured_data"
+ - "**message**" (text of the message)
 
 ### Non-RFC parts
 
@@ -56,22 +55,51 @@ Go framework for syslog sidecars creation
   syslogsidecar creates only one part for badly formatted message - former syslog message:
   - Part name: "data"
   
-  ### Severities
-   Valid severity levels and names are:
- - 0 emerg
- - 1 alert
- - 2 crit
- - 3 err
- - 4 warning
- - 5 notice
- - 6 info
- - 7 debug
+### Syslog facilities
+The facility represents the machine process that created the Syslog event
+| Name | Value | Description |
+| :---          |  :---:           |          :--- |
+|"kern"      | 0  |     kernel messages |
+|"user"      | 1  |     random user-level messages |
+|"mail"      | 2  |     mail system |
+|"daemon"    | 3  |     system daemons |
+|"auth"      | 4  |     security/authorization messages |
+|"syslog"    | 5  |     messages generated internally by syslogd |
+|"lpr"       | 6  |     line printer subsystem |
+|"news"      | 7  |     network news subsystem |
+|"uucp"      | 8  |     UUCP subsystem |
+|"cron"      | 9  |     clock daemon |
+|"authpriv"  | 10 |     security/authorization messages (private) |
+|"ftp"       | 11 |     ftp daemon |
+|"local0"    | 16 |     local use 0 |
+|"local1"    | 17 |     local use 1 |
+|"local2"    | 18 |     local use 2 |
+|"local3"    | 19 |     local use 3 |
+|"local4"    | 20 |     local use 4 |
+|"local5"    | 21 |     local use 5 |
+|"local6"    | 22 |     local use 6 |
+|"local7"    | 23 |     local use 7 |
 
-  syslogsidecar filters messages by level according to value in configuration, e.g. for
+
+
+### Severity levels
+   As the name suggests, the severity level describes the severity of the syslog message in question. 
+
+| Level | Name | Description |
+| :---:          |  :---           |          :--- |
+|0| emerg   |  system is unusable               |
+|1| alert   |  action must be taken immediately |
+|2| crit    |  critical conditions              |
+|3| err     |  error conditions                 |
+|4| warning |  warning conditions               |
+|5| notice  |  normal but significant condition |
+|6| info    |  informational                    |
+|7| debug   |  debug-level messages             |
+
+  syslogsidecar filters messages by severity level according to value in configuration, e.g. for
 ```json
 {
   "SEVERITYLEVEL": 4,
-  ...........
 }
 ```
 all messages with severity above 4 will be discarded. 
@@ -82,7 +110,7 @@ syslogsidecar saves timestamps in [RFC3339](https://datatracker.ietf.org/doc/htm
 
 ### Configuration
 
-  Configuration of receiver part of syslogsidecar is saved in the file syslogreceiver.json:
+  Configuration of syslog server part of syslogsidecar is saved in the file syslogreceiver.json:
 ```json
 {
     "SEVERITYLEVEL": 4,
