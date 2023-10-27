@@ -3,19 +3,18 @@
 [![GoDev](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/g41797/syslogsidecar)
 [![Go](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml/badge.svg)](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml)
 
-
-	Any **syslogsidecar** based process consists of:
-	- syslog server and run-time environment provided by syslogsidecar
-	- broker specific plugins developed in separated repos
+Any **syslogsidecar** based process consists of:
+- syslog server and run-time environment provided by syslogsidecar
+- broker specific plugins developed in separated repos
 	
   ## syslog server component
 	syslog server component of sidecar:
   - receives logs intended for [syslogd](https://linux.die.net/man/8/syslogd)
   - parses, validates and filters messages
-  - supported RFCs:
+  - converts messages to easy for further processing  _*partname=partvalue*_ format
+  - supports RFCs:
     - [RFC3164](<https://tools.ietf.org/html/rfc3164>)
     - [RFC5424](<https://tools.ietf.org/html/rfc5424>)
-
     
   
   ### RFC3164
@@ -186,12 +185,43 @@ There are 3 kinds of broker specific plugins:
 - informs another parts of the process about status of the connection
 - provides additional information 
 
+Interface of connector:
+```go
+// Connector provides possibility for negotiation between sputnik based
+// software and external broker process
+type Connector interface {
+	// Connect to the broker or attach to existing shared
+	Connect(cf sputnik.ConfFactory, shared sputnik.ServerConnection) error
+
+	// For shared connection - detach, for own - close
+	Disconnect()
+}
+```
+
 More about connector and underlying software - [sputnik](https://github.com/g41797/sputnik#readme)
+
+Examples of connector:
+- [connector for NATS](https://github.com/g41797/syslog2nats/blob/main/connector.go)
+- [connector for Memphis](https://github.com/g41797/memphis-protocol-adapter/blob/master/pkg/adapter/connector.go)
+
 
 ### Producer
   - forwards(produces) messages to the broker
-  
-  Sidecar infrastructure supplies syslog messages to producer in easy for processing  _*partname=partvalue*_ format. 
+
+Interface of producer:
+```go
+type MessageProducer interface {
+	Connector
+
+	// Translate message to format of the broker and send it
+	Produce(msg sputnik.Msg) error
+}
+```
+
+Examples of producer:
+- [producer for NATS](https://github.com/g41797/syslog2nats/blob/main/msgproducer.go)
+- [producer for Memphis](https://github.com/g41797/memphis-protocol-adapter/blob/master/pkg/syslog/msgproducer.go)
+
   
 
  ## Implementations are based on syslogsidecar
