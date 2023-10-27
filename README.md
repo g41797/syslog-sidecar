@@ -7,8 +7,8 @@ Any **syslogsidecar** based process consists of:
 - syslog server and run-time environment provided by syslogsidecar
 - broker specific plugins developed in separated repos
 	
-  ## syslog server component
-	syslog server component of sidecar:
+## syslog server component
+syslog server component of sidecar:
   - receives logs intended for [syslogd](https://linux.die.net/man/8/syslogd)
   - parses, validates and filters messages
   - converts messages to easy for further processing  _*partname=partvalue*_ format
@@ -17,7 +17,7 @@ Any **syslogsidecar** based process consists of:
     - [RFC5424](<https://tools.ietf.org/html/rfc5424>)
     
   
-  ### RFC3164
+### RFC3164
 
   RFC3164 is oldest syslog RFC, syslogsidecar supports it for old syslogd clients.
 
@@ -30,7 +30,7 @@ Any **syslogsidecar** based process consists of:
   - "tag"
   - "**content**" (text of the message)
 
-  ### RFC5424
+### RFC5424
 
   RFC5424 message consists of following symbolic parts:
  - "priority" (priority = facility * 8 + severity level)
