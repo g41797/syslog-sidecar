@@ -4,18 +4,20 @@
 [![Go](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml/badge.svg)](https://github.com/g41797/syslogsidecar/actions/workflows/go.yml)
 
 
-  **syslogsidecar**:
+	Any **syslogsidecar** based process consists of:
+	- syslog server and run-time environment provided by syslogsidecar
+	- broker specific plugins developed in separated repos
+	
+  ## syslog server component
+	syslog server component of sidecar:
   - receives logs intended for [syslogd](https://linux.die.net/man/8/syslogd)
   - parses, validates and filters messages
-  - forwards(produces) messages to the broker in easy for further processing _*partname=partvalue*_ format. Names of the parts see below.
-     
-  Supported RFCs:
-  - [RFC3164](<https://tools.ietf.org/html/rfc3164>)
-  - [RFC5424](<https://tools.ietf.org/html/rfc5424>)
+  - supported RFCs:
+    - [RFC3164](<https://tools.ietf.org/html/rfc3164>)
+    - [RFC5424](<https://tools.ietf.org/html/rfc5424>)
 
-  User friendly description of syslogformat:[Analyze syslog messages](https://blog.datalust.co/seq-input-syslog/)
-
-
+    
+  
   ### RFC3164
 
   RFC3164 is oldest syslog RFC, syslogsidecar supports it for old syslogd clients.
@@ -110,7 +112,7 @@ syslogsidecar saves timestamps in [RFC3339](https://datatracker.ietf.org/doc/htm
 
 ### Configuration
 
-  Configuration of syslog server part of syslogsidecar is saved in the file syslogreceiver.json:
+  Configuration of syslog server component of syslogsidecar is saved in the file syslogreceiver.json:
 ```json
 {
     "SEVERITYLEVEL": 4,
@@ -171,13 +173,53 @@ type SyslogConfiguration struct {
 	ROOT_CA_PATH     string
 }
 ```
+## Plugins
 
- ### Automatic startup of the message broker during test/integration
+There are 3 kinds of broker specific plugins:
+- connector
+- producer
+- consumer (only for tests)
 
-You can use [starter](https://github.com/g41797/starter#readme) for automatic start/stop docker containers with broker services.
+### Connector
+- connects to the broker
+- periodically validate connection state and re-connect in case of failure
+- informs another parts of the process about status of the connection
+- provides additional information 
 
+More about connector and underlying software - [sputnik](https://github.com/g41797/sputnik#readme)
 
- ### Implementations are based on syslogsidecar
+### Producer
+  - forwards(produces) messages to the broker
+  
+  Sidecar infrastructure supplies syslog messages to producer in easy for processing  _*partname=partvalue*_ format. 
+  
+
+ ## Implementations are based on syslogsidecar
 
  - syslog for [Memphis](https://memphis.dev) is part of [memphis-protocol-adapter](https://github.com/g41797/memphis-protocol-adapter) project
  - syslog for [NATS](https://nats.io) - [syslog2nats](https://github.com/g41797/syslog2nats)
+
+
+ ## Automatic startup of the message broker during test/integration
+
+You can use [starter](https://github.com/g41797/sputnik/blob/main/sidecar/starter.go) for automatic start/stop docker containers with broker services.
+```go
+	stop, _ := sidecar.StartServices()
+
+	defer stop()
+
+	....................................
+```
+
+## Dependencies
+
+Production:
+- [sputnik](https://github.com/g41797/sputnik)
+- fork of [go-syslog](https://github.com/mcuadros/go-syslog)
+- fork of [gonfig](https://github.com/tkanos/gonfig)
+
+Tests:
+- [srslog](https://github.com/RackSec/srslog)
+- [roaring](https://github.com/RoaringBitmap/roaring)
+- [EventBus](https://github.com/asaskevich/EventBus)
+- [kissngoqueue](https://github.com/g41797/kissngoqueue)
