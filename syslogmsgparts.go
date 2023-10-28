@@ -218,3 +218,21 @@ func toMsg(logParts format.LogParts) sputnik.Msg {
 	return msg
 
 }
+
+func (mp *syslogmsgparts) priority() (string, error) {
+	mp.rewind()
+
+	count, _ := mp.runeAt(0)
+
+	if int(count) <= badMessageParts {
+		return "", fmt.Errorf("non rfc message")
+	}
+
+	rfclen, _ := mp.runeAt(1)
+
+	mp.skip(int(count + rfclen + 1))
+
+	prlen, _ := mp.runeAt(2)
+
+	return mp.part(int(prlen))
+}
