@@ -225,7 +225,7 @@ func (mp *syslogmsgparts) priority() (string, error) {
 	count, _ := mp.runeAt(0)
 
 	if int(count) <= badMessageParts {
-		return "", fmt.Errorf("non rfc message")
+		return Formermessage, fmt.Errorf("non rfc message")
 	}
 
 	rfclen, _ := mp.runeAt(1)
