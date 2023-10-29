@@ -282,7 +282,7 @@ All *local0* messages with severity from the list *err,crit,alert,emerg* should 
 
 ```json 
   {
-	"Selector": "local0.err,crit,alert,emerg",
+	  "Selector": "local0.err,crit,alert,emerg",
     "Target": "app-critical"
   },
 ```
