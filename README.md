@@ -232,7 +232,109 @@ Examples of producer:
 - [producer for NATS](https://github.com/g41797/syslog2nats/blob/main/msgproducer.go)
 - [producer for Memphis](https://github.com/g41797/memphis-protocol-adapter/blob/master/pkg/syslog/msgproducer.go)
 
-  
+ ## Advanced configuration
+
+[syslog.conf](https://linux.die.net/man/5/syslog.conf) file contains logging rules for syslogd.
+
+syslogsidecar support similar functionality via *syslogconf.json* file within configurations folder.
+
+*syslogconf.json* file should be provided by developer of the syslogsidecar for specific broker.
+
+
+Example of syslogconf.json used by syslogsidecar in e2e test:
+```json
+[
+  {
+    "Selector": "local0.err,crit,alert,emerg",
+    "Target": "app-critical"
+  },
+  {
+    "Selector": "info,notice",
+    "Target": "informative_station"
+  },
+  {
+    "Selector": "err,crit,alert",
+    "Target": "system critical subjects"
+  },
+  {
+    "Selector": "kern",
+    "Target": "kernel-logs"
+  },
+  {
+    "Selector": "emerg",
+    "Target": "emergency messages"
+  },
+  {
+    "Selector": "data",
+    "Target": "badmessages-topic"
+  },
+]
+```
+
+
+*Selector* contains rule based on facilities and or severities of the message in question.
+
+*Target* contains where message should be published to. It may be topic, station, subject, folder, etc - it depends on functionality of specific broker.
+
+E.g. for the configuration above:
+
+All *local0* messages with severity from the list *err,crit,alert,emerg* should be published to "app-critical"
+
+```json 
+  {
+	"Selector": "local0.err,crit,alert,emerg",
+    "Target": "app-critical"
+  },
+```
+
+Message with severity info or notice should be published to "informative_station"
+```json
+  {
+    "Selector": "info,notice",
+    "Target": "informative_station"
+  }
+```
+
+
+All kernel messages should be published to "kernel-logs"
+```json
+  {
+    "Selector": "kern",
+    "Target": "kernel-logs"
+  }
+```
+
+All badly formatted messages should be published to "badmessages-topic"
+```json
+  {
+    "Selector": "data",
+    "Target": "badmessages-topic"
+  }
+```
+
+List of targets for the message producer can get from *syslogsidecar.Targets* function:
+```go
+// Returns list of "targets" for the message according to facility and severity
+// of the message and content of syslogconf.json file.
+// Usually error returned for the case of absent or wrong syslogconf.json file.
+// nil, nil - means no defined targets for the message.
+// Decision for this case on producer, e.g. use default target(topic, station, etc)
+// Sidecar transfers targets to producer with solely processing -
+// trim spaces on both sides of the string.
+// Target may be any non-empty valid for JSON format string.
+func Targets(msg sputnik.Msg) ([]string, error) 
+```
+
+Example of possible usage by producer:
+```go
+.......................................
+topics, _ := syslogsidecar.Targets(msg)
+
+for _, topic := range topics {
+  mpr.produceToTopic(msg, topic)
+}
+.......................................
+```
 
  ## Implementations are based on syslogsidecar
 

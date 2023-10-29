@@ -41,7 +41,7 @@ func syslogClientBlockFactory() *sputnik.Block {
 	return block
 }
 
-const max_LOG_MESSAGES = 50 // was 1000000
+const max_LOG_MESSAGES = 1000000
 
 type client struct {
 	conf    syslogsidecar.SyslogConfiguration

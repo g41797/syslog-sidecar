@@ -1,27 +1,26 @@
 [
-    {
-      "Selector": "data",
-      "Target": "badmessages-topic"
-    },
-    {
-      "Selector": "local0.err,crit,alert,emerg",
-      "Target": "app-critical"
-    },
-    {
-      "Selector": "info,notice",
-      "Target": "informative_station"
-    },
-    {
-        "Selector": "err,crit,alert",
-        "Target": "system critical subjects"
-    },
-    {
-      "Selector": "kern.warning",
-      "Target": "kern/warning"
-  }, 
+  {
+    "Selector": "data",
+    "Target": "badmessages-topic"
+  },
+  {
+    "Selector": "local0.err,crit,alert,emerg",
+    "Target": "app-critical"
+  },
+  {
+    "Selector": "info,notice",
+    "Target": "informative_station"
+  },
+  {
+    "Selector": "err,crit,alert",
+    "Target": "system critical subjects"
+  },
+  {
+    "Selector": "kern.warning",
+    "Target": "kern/warning"
+  },
   {
     "Selector": "emerg",
     "Target": "emergency messages"
-}
+  }
 ]
-  
