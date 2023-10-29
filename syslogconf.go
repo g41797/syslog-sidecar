@@ -13,7 +13,7 @@ import (
 	"github.com/g41797/sputnik/sidecar"
 )
 
-// Returns list of "targets" for the message according to facility and severity
+// Returns list of non-repeating "targets" for the message according to facility and severity
 // of the message and content of syslogconf.json file.
 // Usually error returned for the case of absent or wrong syslogconf.json file.
 // nil, nil - means no defined targets for the message.
@@ -53,9 +53,43 @@ func Targets(msg sputnik.Msg) ([]string, error) {
 
 	var targets []string
 
+	trgmap := make(map[string]bool)
+
 	for _, finder := range tFinders {
 		target, _ := finder.gettarget(facility, severiry)
 		if len(target) != 0 {
+			if _, exists := trgmap[target]; !exists {
+				trgmap[target] = true
+				targets = append(targets, target)
+			}
+		}
+	}
+
+	return targets, nil
+}
+
+// Returns list of all non-repeating "targets" existing in syslogconf.json file
+// and error for absent or wrong syslogconf.json file.
+func AllTargets() ([]string, error) {
+
+	bfonce.Do(buildFinders)
+
+	if tfError != nil {
+		return nil, tfError
+	}
+
+	if len(tFinders) == 0 {
+		return nil, fmt.Errorf("empty list of finders")
+	}
+
+	var targets []string
+
+	trgmap := make(map[string]bool)
+
+	for _, finder := range tFinders {
+		target := finder.target
+		if _, exists := trgmap[target]; !exists {
+			trgmap[target] = true
 			targets = append(targets, target)
 		}
 	}

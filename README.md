@@ -314,7 +314,7 @@ All badly formatted messages should be published to "badmessages-topic"
 
 List of targets for the message producer can get from *syslogsidecar.Targets* function:
 ```go
-// Returns list of "targets" for the message according to facility and severity
+// Returns list of non-repeating "targets" for the message according to facility and severity
 // of the message and content of syslogconf.json file.
 // Usually error returned for the case of absent or wrong syslogconf.json file.
 // nil, nil - means no defined targets for the message.
@@ -334,6 +334,13 @@ for _, topic := range topics {
   mpr.produceToTopic(msg, topic)
 }
 .......................................
+```
+
+Additional helper function - *syslogsidecar.AllTargets()*:
+```go
+// Returns list of all non-repeating "targets" existing in syslogconf.json file
+// and error for absent or wrong syslogconf.json file.
+func AllTargets() ([]string, error)
 ```
 
  ## Implementations are based on syslogsidecar
