@@ -52,7 +52,13 @@ func (mpr *msgProducer) Produce(msg sputnik.Msg) error {
 	if !mpr.ebus.HasCallback(mpr.conf.TOPIC) {
 		return fmt.Errorf("subscriber for topic %s does not exist", mpr.conf.TOPIC)
 	}
+	/*
+		topics, _ := syslogsidecar.Targets(msg)
 
+		for _, topic := range topics {
+			mpr.produceToTopic(msg, topic)
+		}
+	*/
 	props, err := syslogsidecar.UnpackToMap(msg)
 
 	syslogsidecar.Put(msg)

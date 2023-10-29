@@ -41,11 +41,12 @@ func syslogClientBlockFactory() *sputnik.Block {
 	return block
 }
 
-const max_LOG_MESSAGES = 1000000
+const max_LOG_MESSAGES = 50 // was 1000000
 
 type client struct {
 	conf    syslogsidecar.SyslogConfiguration
 	loggers []*srslog.Writer
+	flip    bool
 	bc      sputnik.BlockCommunicator
 
 	started   bool
@@ -191,7 +192,16 @@ func (cl *client) sendNext() {
 		return
 	}
 
-	if err := cl.loggers[cl.currIndx%2].Warning(strconv.Itoa(cl.currIndx)); err != nil {
+	var err error
+	if cl.flip {
+		err = cl.loggers[cl.currIndx%2].Warning(strconv.Itoa(cl.currIndx))
+	} else {
+		err = cl.loggers[cl.currIndx%2].Emerg(strconv.Itoa(cl.currIndx))
+	}
+
+	cl.flip = !cl.flip
+
+	if err != nil {
 		cl.stopflow()
 		return
 	}

@@ -6,6 +6,36 @@ import (
 	"github.com/g41797/sputnik"
 )
 
+// Creates map[string]string from syslog parts are stored within message
+func UnpackToMap(msg sputnik.Msg) (map[string]string, error) {
+	uh := NewUnpackHelper()
+	err := Unpack(msg, uh.Put)
+	if err != nil {
+		return nil, err
+	}
+	return uh.LogParts, nil
+}
+
+// For every part of syslog message(stored within msg) runs supplied callback
+// See README for the list of partnames
+func Unpack(msg sputnik.Msg, f func(partname string, val string) error) error {
+	if msg == nil {
+		return fmt.Errorf("nil msg")
+	}
+
+	slm, exists := msg[syslogmessage]
+	if !exists {
+		return fmt.Errorf("empty msg")
+	}
+
+	syslogmsgparts, ok := slm.(*syslogmsgparts)
+	if !ok {
+		return fmt.Errorf("wrong msg")
+	}
+
+	return syslogmsgparts.Unpack(f)
+}
+
 func Pack(msg sputnik.Msg, parts map[string]string) error {
 	if msg == nil {
 		return fmt.Errorf("nil msg")
@@ -55,33 +85,6 @@ func pack(msg sputnik.Msg, parts map[string]string, syslogmsgparts *syslogmsgpar
 		syslogmsgparts.setRuneAt(i+1, rune(syslogmsgparts.appendText(val)))
 	}
 	return nil
-}
-
-func Unpack(msg sputnik.Msg, f func(name string, val string) error) error {
-	if msg == nil {
-		return fmt.Errorf("nil msg")
-	}
-
-	slm, exists := msg[syslogmessage]
-	if !exists {
-		return fmt.Errorf("empty msg")
-	}
-
-	syslogmsgparts, ok := slm.(*syslogmsgparts)
-	if !ok {
-		return fmt.Errorf("wrong msg")
-	}
-
-	return syslogmsgparts.Unpack(f)
-}
-
-func UnpackToMap(msg sputnik.Msg) (map[string]string, error) {
-	uh := NewUnpackHelper()
-	err := Unpack(msg, uh.Put)
-	if err != nil {
-		return nil, err
-	}
-	return uh.LogParts, nil
 }
 
 type UnpackHelper struct {
