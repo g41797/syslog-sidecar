@@ -180,20 +180,30 @@ There are 3 kinds of broker specific plugins:
 - consumer (only for tests)
 
 ### Connector
-- connects to the broker
+- connects to the server(broker)
 - periodically validate connection state and re-connect in case of failure
 - informs another parts of the process about status of the connection
 - provides additional information 
 
 Interface of connector:
 ```go
-// Connector provides possibility for negotiation between sputnik based
-// software and external broker process
-type Connector interface {
-	// Connect to the broker or attach to existing shared
-	Connect(cf sputnik.ConfFactory, shared sputnik.ServerConnection) error
+type ServerConnector interface {
+	// Connects to the server and return connection to server
+	// If connection failed, returns error.
+	// ' Connect' for already connected
+	// and still not brocken connection should
+	// return the same value returned in previous
+	// successful call(s) and nil error
+	Connect(cf ConfFactory) (conn ServerConnection, err error)
 
-	// For shared connection - detach, for own - close
+	// Returns false if
+	//  - was not connected at all
+	//  - was connected, but connection is brocken
+	// True returned if
+	//  - connected and connection is alive
+	IsConnected() bool
+
+	// If connection is alive closes it
 	Disconnect()
 }
 ```
