@@ -232,11 +232,11 @@ Examples of producer:
 - [producer for NATS](https://github.com/g41797/syslog2nats/blob/main/msgproducer.go)
 - [producer for Memphis](https://github.com/g41797/memphis-protocol-adapter/blob/master/pkg/syslog/msgproducer.go)
 
- ## Advanced configuration
+ ### Advanced configuration and helper functions for producer
 
 [syslog.conf](https://linux.die.net/man/5/syslog.conf) file contains logging rules for syslogd.
 
-syslogsidecar support similar functionality via *syslogconf.json* file within configurations folder.
+syslogsidecar support similar functionality via *syslogconf.json* file within configurations folder and 2 helper functions for producer.
 
 *syslogconf.json* file should be provided by developer of the syslogsidecar for specific broker.
 
@@ -274,7 +274,7 @@ Example of syslogconf.json used by syslogsidecar in e2e test:
 
 *Selector* contains rule based on facilities and or severities of the message in question.
 
-*Target* contains where message should be published to. It may be topic, station, subject, folder, etc - it depends on functionality of specific broker.
+*Target* contains where message should be published to. It may be topic, station, subject, folder, combination of configuration parameters, etc - it depends on functionality of specific broker. One requirement - not empty valid for JSON format string.
 
 E.g. for the configuration above:
 
@@ -312,7 +312,7 @@ All badly formatted messages should be published to "badmessages-topic"
   }
 ```
 
-List of targets for the message producer can get from *syslogsidecar.Targets* function:
+Producer can get list of targets for the message  from *syslogsidecar.Targets* function:
 ```go
 // Returns list of non-repeating "targets" for the message according to facility and severity
 // of the message and content of syslogconf.json file.

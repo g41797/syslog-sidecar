@@ -274,13 +274,13 @@ func (cl *client) report() {
 }
 
 func (cl *client) openLoggers() error {
-	lgr, err := newLogWriter(cl.conf, srslog.RFC3164Formatter)
+	lgr, err := newLogWriter(cl.conf, srslog.RFC3164Formatter, srslog.LOG_LOCAL0+srslog.LOG_EMERG)
 	if err != nil {
 		return err
 	}
 	cl.loggers[0] = lgr
 
-	lgr, err = newLogWriter(cl.conf, srslog.RFC5424Formatter)
+	lgr, err = newLogWriter(cl.conf, srslog.RFC5424Formatter, srslog.LOG_WARNING)
 	if err != nil {
 		cl.loggers[0].Close()
 		cl.loggers[0] = nil
@@ -298,8 +298,8 @@ func (cl *client) closeLoggers() {
 	}
 }
 
-func newLogWriter(cnf syslogsidecar.SyslogConfiguration, rfcForm srslog.Formatter) (*srslog.Writer, error) {
-	w, err := srslog.Dial("tcp", cnf.ADDRTCP, srslog.LOG_ALERT, "re2e")
+func newLogWriter(cnf syslogsidecar.SyslogConfiguration, rfcForm srslog.Formatter, pri srslog.Priority) (*srslog.Writer, error) {
+	w, err := srslog.Dial("tcp", cnf.ADDRTCP, pri, "re2e")
 	if err != nil {
 		return nil, err
 	}

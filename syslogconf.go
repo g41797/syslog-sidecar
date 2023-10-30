@@ -228,6 +228,9 @@ func (se *slfEntry) toFinder() (*targetFinder, error) {
 		severities := strings.Split(after, ",")
 
 		for _, sev := range severities {
+			if len(sev) == 0 {
+				continue
+			}
 			if !isSeverity(sev) {
 				return nil, fmt.Errorf("wrong severity %s", sev)
 			}
@@ -237,7 +240,12 @@ func (se *slfEntry) toFinder() (*targetFinder, error) {
 			}
 		}
 
-		tf.gettarget = tf.severitiesOfFacitity
+		if len(tf.severities) == 0 {
+			tf.gettarget = tf.listoffacilities
+		} else {
+			tf.gettarget = tf.severitiesOfFacitity
+		}
+
 		return tf, nil
 	}
 	// s1,s2,....sN or f1,f2,...fN ?
