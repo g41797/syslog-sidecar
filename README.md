@@ -172,22 +172,18 @@ type SyslogConfiguration struct {
 	ROOT_CA_PATH     string
 }
 ```
-For os with support of **SO_REUSEPORT** socket option, sidecar opens simultaneously
-8 UDP ports: 
-```sh
-sudo netstat --tcp --udp --listening --programs --numeric|grep 5141
-tcp        0      0 127.0.0.1:5141          0.0.0.0:*               LISTEN      63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e  
-udp        0      0 127.0.0.1:5141          0.0.0.0:*                           63457/./syslog-e2e 
-```
 
+### Experimental feature
+For os with support of **SO_REUSEPORT** socket option, sidecar opens simultaneously
+8 UDP ports. You can use netstat command to see the list:
+```sh
+sudo netstat  --udp --listening --programs --numeric|grep 5141
+```
 [it is intended to improve the performance of multithreaded network server applications running on top of multicore systems](https://lwn.net/Articles/542629/) and decrease number of dropped UDP messages (see [syslog udp message loss](https://axoflow.com/syslog-over-udp-message-loss-1/#))
+
+_*Because this feature is experimental*_:
+- it is not configurable
+- may be removed in the near future 
 
 
 ## Plugins
