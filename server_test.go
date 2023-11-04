@@ -41,7 +41,7 @@ func (test *srvTest) start() {
 	test.syslogconf = defaultServerConfiguration()
 	test.srv = newServer(test.syslogconf)
 
-	err := test.srv.Init()
+	err := test.srv.initServer()
 	if err != nil {
 		test.t.Errorf("Init error %v", err)
 	}
@@ -52,9 +52,9 @@ func (test *srvTest) start() {
 	if err != nil {
 		test.t.Errorf("Init client error %v", err)
 	}
-	test.srv.SetupHandling(newCommunicator(test.q))
+	test.srv.setupHandling(newCommunicator(test.q))
 
-	err = test.srv.Start()
+	err = test.srv.start()
 	if err != nil {
 		test.t.Errorf("Start syslogd error %v", err)
 	}
@@ -62,7 +62,7 @@ func (test *srvTest) start() {
 
 func (test *srvTest) stop() {
 	test.client.finish()
-	err := test.srv.Finish()
+	err := test.srv.stop()
 	if err != nil {
 		test.t.Errorf("stop server error %v", err)
 	}
@@ -98,7 +98,7 @@ func (test *srvTest) exchange() {
 }
 
 func (test *srvTest) stopServer() {
-	err := test.srv.Finish()
+	err := test.srv.stop()
 	if err != nil {
 		test.t.Errorf("stop server error %v", err)
 	}

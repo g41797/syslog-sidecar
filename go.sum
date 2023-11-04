@@ -8,8 +8,8 @@ github.com/bits-and-blooms/bitset v1.2.0 h1:Kn4yilvwNtMACtf1eYDlG8H77R07mZSPbMjL
 github.com/bits-and-blooms/bitset v1.2.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/g41797/go-syslog v1.0.10 h1:xyj9Gs/tts2aRlObtnXWGSx6UXU4GKm31NJZrpWCgl0=
-github.com/g41797/go-syslog v1.0.10/go.mod h1:0XG2Y7r0zB3KLbJG/aJsrYaO1mSs1CfGWD1dQ1J8M64=
+github.com/g41797/go-syslog v1.0.11 h1:HpS1pkLg6Yxt12+N1nySFHj7QSZA+gihYajuCoLxG/0=
+github.com/g41797/go-syslog v1.0.11/go.mod h1:UML8pQR/cz2IUPcKPrfJ98kViyXxbx1OCj6MVqeJR+E=
 github.com/g41797/gonfig v1.0.1 h1:ywgkhF3SbNJuFN9Hlm9n7Lp+KxqeupkNmFObn2ZpWs8=
 github.com/g41797/gonfig v1.0.1/go.mod h1:5iL4oHFpYi+c7AE4D1dZnlBleJzM71dX6HZBhEELF90=
 github.com/g41797/kissngoqueue v0.1.5 h1:UrnpxbjOnTnKj/EqpbLA9LjhYkHjnLWMZQqsz3AOBG8=

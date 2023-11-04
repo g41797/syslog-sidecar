@@ -55,11 +55,13 @@ type SyslogConfiguration struct {
 	ROOT_CA_PATH     string
 }
 
+type syslogs []*syslog.Server
+
 type server struct {
-	config  SyslogConfiguration
-	bc      atomic.Pointer[sputnik.BlockCommunicator]
-	syslogd *syslog.Server
-	q       *kissngoqueue.Queue[format.LogParts]
+	config SyslogConfiguration
+	bc     atomic.Pointer[sputnik.BlockCommunicator]
+	logs   syslogs
+	q      *kissngoqueue.Queue[format.LogParts]
 }
 
 func newServer(conf SyslogConfiguration) *server {
@@ -67,46 +69,38 @@ func newServer(conf SyslogConfiguration) *server {
 	srv.config = conf
 	srv.bc = atomic.Pointer[sputnik.BlockCommunicator]{}
 	srv.q = kissngoqueue.NewQueue[format.LogParts]()
+	srv.logs = make(syslogs, 0)
 	return srv
 }
 
-func (s *server) Init() error {
-	s.syslogd = syslog.NewServer()
-	s.syslogd.SetFormat(syslog.Automatic)
-	s.syslogd.SetHandler(s)
-	if len(s.config.ADDRTCP) != 0 {
-		err := s.syslogd.ListenTCP(s.config.ADDRTCP)
-		if err != nil {
-			return err
-		}
+func (s *server) initServer() error {
+
+	if err := s.newsyslogdTCP(); err != nil {
+		return err
 	}
 
-	if len(s.config.ADDRUDP) != 0 {
-		err := s.syslogd.ListenUDP(s.config.ADDRUDP)
-		if err != nil {
-			return err
-		}
+	if err := s.newsyslogdTCPTLS(); err != nil {
+		return err
 	}
 
-	if len(s.config.ADDRTCPTLS) != 0 {
-		t, err := prepareTLS(s.config.CLIENT_CERT_PATH, s.config.CLIENT_KEY_PATH, s.config.ROOT_CA_PATH)
+	if err := s.newsyslogdUDS(); err != nil {
+		return err
+	}
 
-		if err != nil {
-			return err
-		}
+	ls, err := s.newsyslogdUDP()
+	if err != nil {
+		return err
+	}
 
-		if t != nil {
-			err = s.syslogd.ListenTCPTLS(s.config.ADDRUDP, t)
-			if err != nil {
-				return err
+	if ls != nil {
+
+		s.logs = append(s.logs, ls)
+
+		if ls.IsUDPReusable() {
+			for i := 1; i < 8; i++ {
+				ls, _ := s.newsyslogdUDP()
+				s.logs = append(s.logs, ls)
 			}
-		}
-	}
-
-	if len(s.config.UDSPATH) != 0 {
-		err := s.syslogd.ListenUnixgram(s.config.UDSPATH)
-		if err != nil {
-			return err
 		}
 	}
 
@@ -115,19 +109,103 @@ func (s *server) Init() error {
 	return nil
 }
 
-func (s *server) Start() error {
-	return s.syslogd.Boot()
+func (s *server) newsyslogd() *syslog.Server {
+	result := syslog.NewServer()
+	result.SetFormat(syslog.Automatic)
+	result.SetHandler(s)
+	return result
 }
 
-func (s *server) Finish() error {
-	s.q.Cancel()
-	return s.syslogd.Kill()
+func (s *server) newsyslogdTCP() error {
+
+	if len(s.config.ADDRTCP) == 0 {
+		return nil
+	}
+
+	ls := s.newsyslogd()
+
+	if err := ls.ListenTCP(s.config.ADDRTCP); err != nil {
+		return err
+	}
+
+	s.logs = append(s.logs, ls)
+
+	return nil
 }
 
-func (s *server) SetupHandling(bc sputnik.BlockCommunicator) {
+func (s *server) newsyslogdTCPTLS() error {
+
+	if len(s.config.ADDRTCPTLS) == 0 {
+		return nil
+	}
+
+	t, err := prepareTLS(s.config.CLIENT_CERT_PATH, s.config.CLIENT_KEY_PATH, s.config.ROOT_CA_PATH)
+
+	if err != nil {
+		return err
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	ls := s.newsyslogd()
+
+	if err = ls.ListenTCPTLS(s.config.ADDRTCPTLS, t); err != nil {
+		return err
+	}
+
+	s.logs = append(s.logs, ls)
+
+	return nil
+}
+
+func (s *server) newsyslogdUDS() error {
+
+	if len(s.config.UDSPATH) == 0 {
+		return nil
+	}
+
+	ls := s.newsyslogd()
+
+	if err := ls.ListenUnixgram(s.config.UDSPATH); err != nil {
+		return err
+	}
+
+	s.logs = append(s.logs, ls)
+
+	return nil
+}
+
+func (s *server) newsyslogdUDP() (*syslog.Server, error) {
+
+	if len(s.config.ADDRUDP) == 0 {
+		return nil, nil
+	}
+
+	ls := s.newsyslogd()
+
+	if err := ls.ListenUDP(s.config.ADDRUDP); err != nil {
+		return nil, err
+	}
+
+	return ls, nil
+}
+
+func (s *server) start() error {
+	return s.logs.Boot()
+}
+
+func (s *server) stop() error {
+	s.q.CancelMT()
+	return s.logs.Kill()
+}
+
+func (s *server) setupHandling(bc sputnik.BlockCommunicator) {
 	s.bc.Store(&bc)
 }
 
+// Process received and parsed syslog messages - called by go-syslog
 func (s *server) Handle(logParts format.LogParts, msgLen int64, err error) {
 	if s.bc.Load() == nil {
 		return
@@ -138,10 +216,6 @@ func (s *server) Handle(logParts format.LogParts, msgLen int64, err error) {
 	}
 
 	s.q.PutMT(logParts)
-}
-
-func (s *server) startLogPartsProcessor() {
-
 }
 
 func (s *server) processLogParts() {
@@ -177,4 +251,31 @@ func (s *server) forHandle(logParts format.LogParts) bool {
 	sevvalue, _ := severity.(int)
 
 	return sevvalue <= s.config.SEVERITYLEVEL
+}
+
+func (logs syslogs) Boot() error {
+	if len(logs) == 0 {
+		return nil
+	}
+
+	var err error
+
+	for _, l := range logs {
+		if err = l.Boot(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (logs syslogs) Kill() error {
+	if len(logs) == 0 {
+		return nil
+	}
+
+	for _, l := range logs {
+		l.Kill()
+	}
+	return nil
 }

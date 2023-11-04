@@ -52,11 +52,11 @@ func (rcv *receiver) init(fact sputnik.ConfFactory) error {
 
 	syslogd := newServer(rcv.conf)
 
-	if err := syslogd.Init(); err != nil {
+	if err := syslogd.initServer(); err != nil {
 		return err
 	}
 
-	syslogd.SetupHandling(nil)
+	syslogd.setupHandling(nil)
 
 	rcv.syslogd = syslogd
 	rcv.stop = make(chan struct{}, 1)
@@ -80,7 +80,7 @@ func (rcv *receiver) finish(init bool) {
 // Run:
 func (rcv *receiver) run(bc sputnik.BlockCommunicator) {
 
-	err := rcv.syslogd.Start()
+	err := rcv.syslogd.start()
 	if err != nil {
 		panic(err)
 	}
@@ -96,7 +96,7 @@ func (rcv *receiver) run(bc sputnik.BlockCommunicator) {
 	}
 
 	rcv.producer = producer
-	rcv.syslogd.SetupHandling(rcv.producer)
+	rcv.syslogd.setupHandling(rcv.producer)
 
 	<-rcv.stop
 
@@ -113,8 +113,8 @@ func (rcv *receiver) stopSyslog() {
 		return
 	}
 
-	rcv.syslogd.SetupHandling(nil)
-	rcv.syslogd.Finish()
+	rcv.syslogd.setupHandling(nil)
+	rcv.syslogd.stop()
 
 	return
 }
