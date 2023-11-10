@@ -109,7 +109,14 @@ all messages with severity above 4 will be discarded.
 
 syslogsidecar saves timestamps in [RFC3339](https://datatracker.ietf.org/doc/html/rfc3339) format
 
-### Configuration
+### Configuration folder
+
+  All configuration files of the process should be stored within on folder.
+  Path of this folder process receives via "--cf" flag in command line, e.g.:
+```bash
+./syslogproc -cf ./cmd/syslogproc/conf/  
+```  
+### syslog server configuration
 
   Configuration of syslog server component of syslogsidecar is saved in the file syslogreceiver.json:
 ```json
@@ -356,6 +363,32 @@ Additional helper function - *syslogsidecar.AllTargets()*:
 // and error for absent or wrong syslogconf.json file.
 func AllTargets() ([]string, error)
 ```
+## Embedding configuration files
+
+syslogsidecar process can use embedded configuration files:
+```go
+import (
+	"embed"
+  .........
+)
+
+//go:embed conf
+var embconf embed.FS
+
+func main() {
+  ............................
+  ............................
+	cleanUp, _ := sidecar.UseEmbeddedConfiguration(&embconf)
+	defer cleanUp()
+	sidecar.Start(syslog2nats.NewConnector())
+}
+
+```
+For this case content of **conf** subfolder embedded within process.
+No needs for "--cf" flag in command line.
+
+Any value in configuration file may be [overridden using environment variables](https://github.com/g41797/gonfig#gonfig-)
+
 
  ## Implementations are based on syslogsidecar
 

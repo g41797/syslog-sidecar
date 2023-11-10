@@ -8,7 +8,7 @@ require (
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/g41797/go-syslog v1.0.11
 	github.com/g41797/kissngoqueue v0.1.5
-	github.com/g41797/sputnik v0.0.17
+	github.com/g41797/sputnik v0.0.18
 )
 
 require (
