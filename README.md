@@ -111,10 +111,10 @@ syslogsidecar saves timestamps in [RFC3339](https://datatracker.ietf.org/doc/htm
 
 ### Configuration folder
 
-  All configuration files of the process should be stored within on folder.
+  All configuration files of the process should be stored within one folder.
   Path of this folder process receives via "--cf" flag in command line, e.g.:
 ```bash
-./syslogproc -cf ./cmd/syslogproc/conf/  
+./syslogproc --cf ./cmd/syslogproc/conf/  
 ```  
 ### syslog server configuration
 
